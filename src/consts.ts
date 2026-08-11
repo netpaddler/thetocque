@@ -29,7 +29,7 @@ export const LINKS = {
    * Set once the publication exists; until then subscribe CTAs are hidden and
    * the homepage "Latest" section falls back to the archived posts.
    */
-  substack: '' as string,
+  substack: 'https://thetocque.substack.com' as string,
 } as const;
 
 /** Derived from LINKS.substack so pages don't hand-roll feed URLs. */
