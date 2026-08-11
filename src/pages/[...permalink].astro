@@ -1,0 +1,95 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Subscribe from '../components/Subscribe.astro';
+
+/**
+ * Renders every archived post at its original WordPress permalink
+ * (/YYYY/MM/DD/slug/). Keeping these paths byte-identical is the whole reason
+ * the migration doesn't cost the org its existing search rankings.
+ */
+export async function getStaticPaths() {
+  const posts = await getCollection('blog');
+  return posts.map((post) => ({
+    // Astro's rest param wants the path without leading/trailing slashes.
+    params: { permalink: post.data.permalink.replace(/^\/|\/$/g, '') },
+    props: { post },
+  }));
+}
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+}
+
+const { post } = Astro.props;
+const { Content } = await render(post);
+const { title, description, pubDate } = post.data;
+---
+
+<BaseLayout title={title} description={description} type="article" publishedTime={pubDate}>
+  <article class="wrap post">
+    <header>
+      <p class="eyebrow">
+        <a href="/blog/">Essays</a>
+      </p>
+      <h1>{title}</h1>
+      <p class="meta">
+        <time datetime={pubDate.toISOString()}>
+          {
+            pubDate.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric',
+              timeZone: 'UTC',
+            })
+          }
+        </time>
+      </p>
+    </header>
+
+    <div class="prose">
+      <Content />
+    </div>
+
+    <footer class="post__footer">
+      <Subscribe compact />
+    </footer>
+  </article>
+</BaseLayout>
+
+<style>
+  .post {
+    padding-block: clamp(2rem, 5vw, 3.5rem);
+  }
+
+  .post header {
+    max-width: var(--measure);
+    margin-bottom: 2.5rem;
+  }
+
+  .eyebrow {
+    margin-bottom: 0.75rem;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .eyebrow a {
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .eyebrow a:hover {
+    text-decoration: underline;
+  }
+
+  .meta {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+  }
+
+  .post__footer {
+    max-width: var(--measure);
+    margin-top: 3.5rem;
+  }
+</style>

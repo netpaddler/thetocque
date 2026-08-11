@@ -1,0 +1,99 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostCard from '../../components/PostCard.astro';
+import Subscribe from '../../components/Subscribe.astro';
+import { LINKS } from '../../consts';
+import { truncate } from '../../lib/text';
+
+const posts = (await getCollection('blog')).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
+);
+---
+
+<BaseLayout
+  title="Essays"
+  description="Essays from the Tocqueville Liberty Institute on faith, sound money, civic duty, and the foundations of the American republic."
+>
+  <div class="wrap page">
+    <header class="page__head">
+      <h1>Essays</h1>
+      <p class="lede">
+        Writing on the three legs of liberty — faith, commerce, and civics — and what
+        Tocqueville still has to teach a republic under strain.
+      </p>
+    </header>
+
+    {
+      LINKS.substack && (
+        <p class="notice">
+          New essays now publish on{' '}
+          <a href={LINKS.substack} rel="noopener">
+            our Substack
+          </a>
+          . Everything below is the archive from 2025–2026.
+        </p>
+      )
+    }
+
+    <ul class="cards">
+      {
+        posts.map((post) => (
+          <li>
+            <PostCard
+              href={post.data.permalink}
+              title={post.data.title}
+              description={truncate(post.data.description, 170)}
+              date={post.data.pubDate}
+            />
+          </li>
+        ))
+      }
+    </ul>
+
+    {
+      LINKS.substack && (
+        <div class="tail">
+          <Subscribe />
+        </div>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: clamp(2.5rem, 6vw, 4rem);
+  }
+
+  .page__head {
+    max-width: var(--measure);
+    margin-bottom: 2rem;
+  }
+
+  .lede {
+    font-size: clamp(1.05rem, 2vw, 1.2rem);
+    color: var(--ink-muted);
+    margin: 0;
+  }
+
+  .notice {
+    padding: 1rem 1.25rem;
+    background: var(--purple-tint);
+    border-radius: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .cards {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .tail {
+    margin-top: clamp(3rem, 7vw, 4.5rem);
+  }
+</style>

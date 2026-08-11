@@ -1,0 +1,197 @@
+/* Brand tokens lifted from the WordPress theme so the rebuild stays recognisable. */
+:root {
+  --purple: #7924c0;
+  --purple-dark: #5c1a92;
+  --purple-tint: #f2eafa;
+  --ink: #232d3f;
+  --ink-muted: #5b6478;
+  --paper: #ffffff;
+  --paper-alt: #f4f2f9;
+  --rule: #e3e0ec;
+  --radius: 20px;
+  --measure: 68ch;
+  --wrap: 1120px;
+  --pad: clamp(1rem, 4vw, 2.5rem);
+
+  --font-sans: 'Poppins', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 1.0625rem;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 0 0 0.5em;
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: clamp(2rem, 5vw, 3.25rem);
+}
+h2 {
+  font-size: clamp(1.5rem, 3.2vw, 2.125rem);
+}
+h3 {
+  font-size: clamp(1.2rem, 2.4vw, 1.5rem);
+}
+
+p,
+ul,
+ol {
+  margin: 0 0 1.15em;
+}
+
+a {
+  color: var(--purple);
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  color: var(--purple-dark);
+}
+
+img,
+svg,
+video,
+audio {
+  max-width: 100%;
+  height: auto;
+}
+
+audio {
+  width: 100%;
+}
+
+hr {
+  border: 0;
+  border-top: 1px solid var(--rule);
+  margin: 2.5rem 0;
+}
+
+blockquote {
+  margin: 1.75rem 0;
+  padding: 0.25rem 0 0.25rem 1.25rem;
+  border-left: 4px solid var(--purple);
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--paper-alt);
+  padding: 0.15em 0.4em;
+  border-radius: 5px;
+}
+
+:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Layout primitives */
+.wrap {
+  width: 100%;
+  max-width: var(--wrap);
+  margin-inline: auto;
+  padding-inline: var(--pad);
+}
+
+.prose {
+  max-width: var(--measure);
+}
+.prose :is(h2, h3) {
+  margin-top: 2em;
+}
+.prose img {
+  border-radius: 12px;
+  margin-block: 1.75rem;
+  /* Several migrated illustrations are tall portraits; without a cap they eat a
+     whole viewport and push the argument off screen. */
+  max-height: 70vh;
+  width: auto;
+  margin-inline: auto;
+  display: block;
+}
+
+.section {
+  padding-block: clamp(3rem, 7vw, 5rem);
+}
+.section--tint {
+  background: var(--paper-alt);
+}
+
+/* Buttons */
+.btn {
+  display: inline-block;
+  padding: 0.8em 1.6em;
+  border-radius: 999px;
+  background: var(--purple);
+  color: #fff;
+  font-weight: 600;
+  text-decoration: none;
+  border: 2px solid var(--purple);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.btn:hover {
+  background: var(--purple-dark);
+  border-color: var(--purple-dark);
+  color: #fff;
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--purple);
+}
+.btn--ghost:hover {
+  background: var(--purple);
+  color: #fff;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  background: var(--purple);
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  z-index: 100;
+}
+.skip-link:focus {
+  left: 0;
+}

@@ -1,0 +1,62 @@
+---
+import { LINKS } from '../consts';
+
+interface Props {
+  compact?: boolean;
+}
+const { compact = false } = Astro.props;
+---
+
+{
+  LINKS.substack && (
+    <div class:list={['subscribe', compact && 'subscribe--compact']}>
+      <h2>Get the essays in your inbox</h2>
+      <p>
+        New writing on faith, sound money, and the habits of self-government — published free
+        on Substack.
+      </p>
+      <a class="btn" href={LINKS.substack} rel="noopener">
+        Subscribe on Substack
+      </a>
+    </div>
+  )
+}
+
+<style>
+  .subscribe {
+    padding: clamp(1.75rem, 4vw, 2.75rem);
+    background: var(--purple);
+    color: #fff;
+    border-radius: var(--radius);
+    text-align: center;
+  }
+
+  .subscribe h2 {
+    margin-bottom: 0.5rem;
+  }
+
+  .subscribe p {
+    margin-inline: auto;
+    margin-bottom: 1.5rem;
+    max-width: 46ch;
+    color: rgb(255 255 255 / 0.9);
+  }
+
+  .subscribe .btn {
+    background: #fff;
+    color: var(--purple);
+    border-color: #fff;
+  }
+  .subscribe .btn:hover {
+    background: var(--purple-tint);
+    border-color: var(--purple-tint);
+    color: var(--purple-dark);
+  }
+
+  .subscribe--compact {
+    text-align: left;
+  }
+  .subscribe--compact p {
+    margin-inline: 0;
+  }
+</style>

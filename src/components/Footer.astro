@@ -1,0 +1,106 @@
+---
+import { SITE, CONTACT, LINKS, NAV } from '../consts';
+const year = new Date().getFullYear();
+---
+
+<footer class="site-footer">
+  <div class="wrap cols">
+    <div>
+      <h2>{SITE.name}</h2>
+      <address>
+        {CONTACT.street}<br />
+        {CONTACT.city}, {CONTACT.region} {CONTACT.postalCode}<br />
+        <a href={CONTACT.phoneHref}>{CONTACT.phone}</a>
+      </address>
+      <p class="ein">501(c)(3) nonprofit · EIN {SITE.ein}</p>
+    </div>
+
+    <div>
+      <h2>Explore</h2>
+      <ul>
+        {NAV.map((i) => <li><a href={i.href}>{i.label}</a></li>)}
+        <li><a href="/feed/">RSS feed</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h2>Support the mission</h2>
+      <p>
+        Donations fund workshops, talks, and the civic education programs that keep the
+        republic's habits alive.
+      </p>
+      <a class="btn" href={LINKS.donate}>Donate</a>
+    </div>
+  </div>
+
+  <div class="wrap legal">
+    <p>© {year} {SITE.name}. All rights reserved.</p>
+  </div>
+</footer>
+
+<style>
+  .site-footer {
+    margin-top: clamp(3rem, 8vw, 6rem);
+    background: var(--paper-alt);
+    border-top: 1px solid var(--rule);
+    padding-block: clamp(2.5rem, 6vw, 4rem) 1.5rem;
+  }
+
+  .cols {
+    display: grid;
+    gap: clamp(1.75rem, 4vw, 3rem);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  }
+
+  h2 {
+    font-size: 1.05rem;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--purple);
+    margin-bottom: 0.85rem;
+  }
+
+  address {
+    font-style: normal;
+    color: var(--ink-muted);
+  }
+
+  .ein {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--ink-muted);
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li + li {
+    margin-top: 0.4rem;
+  }
+
+  a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+  a:hover {
+    color: var(--purple);
+    text-decoration: underline;
+  }
+  a.btn {
+    color: #fff;
+  }
+
+  .legal {
+    margin-top: 2.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.875rem;
+    color: var(--ink-muted);
+  }
+  .legal p {
+    margin: 0;
+  }
+</style>

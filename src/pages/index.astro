@@ -1,0 +1,288 @@
+---
+import { getCollection } from 'astro:content';
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import PostCard from '../components/PostCard.astro';
+import Subscribe from '../components/Subscribe.astro';
+import founder from '../assets/site/founder-colonel-pete.jpg';
+import emblem from '../assets/site/tli-emblem.png';
+import { CONTACT, LINKS, SITE } from '../consts';
+import { getSubstackPosts } from '../lib/substack';
+import { truncate } from '../lib/text';
+
+// New writing lives on Substack; until that publication has posts we surface
+// the migrated archive so this section is never empty.
+const substack = await getSubstackPosts(3);
+
+const archive = (await getCollection('blog'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
+  .slice(0, 3);
+
+const latest = substack.length
+  ? substack.map((p) => ({
+      href: p.link,
+      title: p.title,
+      description: truncate(p.description, 160),
+      date: p.pubDate,
+      external: true,
+    }))
+  : archive.map((p) => ({
+      href: p.data.permalink,
+      title: p.data.title,
+      description: truncate(p.data.description, 160),
+      date: p.data.pubDate,
+      external: false,
+    }));
+
+const values = [
+  {
+    title: 'Civic Education',
+    body: 'Promoting a deep understanding of American history, government, and economics.',
+  },
+  {
+    title: 'Active Citizenship',
+    body: 'Encouraging participation in democratic processes at all levels.',
+  },
+  {
+    title: 'Critical Thinking',
+    body: 'Fostering the ability to analyze information and make informed decisions.',
+  },
+];
+---
+
+<BaseLayout>
+  <section class="hero wrap">
+    <h1>Civic Education for a Stronger American Republic</h1>
+    <p class="lede">{SITE.description}</p>
+    <div class="hero__actions">
+      <a class="btn" href={LINKS.donate}>Support the mission</a>
+      <a class="btn btn--ghost" href="/blog/">Read the essays</a>
+    </div>
+  </section>
+
+  <section class="section section--tint">
+    <div class="wrap founder">
+      <figure class="founder__portrait">
+        <Image
+          src={founder}
+          alt="Colonel Pete, founder of the Tocqueville Liberty Institute, in U.S. Air Force dress uniform beside an American flag"
+          widths={[400, 600, 800]}
+          sizes="(max-width: 780px) 100vw, 380px"
+          loading="eager"
+        />
+      </figure>
+
+      <div class="founder__text">
+        <h2>Welcome from the founder</h2>
+        <p>
+          Welcome to the TLI. Here we are dedicated to learning and inspiring our fellow
+          Americans to take action in preserving our republic. Together we can uphold the
+          principles of democracy and ensure a brighter future for generations to come.
+        </p>
+        <p>
+          Book an engagement to hear the founding story firsthand — how a Taiwanese immigrant
+          came to America, fell in love with this country's founding principles, and now wants
+          to reignite that romance for his fellow Americans.
+        </p>
+        <p>
+          <a class="btn btn--ghost" href={CONTACT.phoneHref}>
+            Book an engagement — {CONTACT.phone}
+          </a>
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap mission">
+      <div class="mission__text">
+        <h2>Mission</h2>
+        <p>
+          The Tocqueville Liberty Institute is a 501(c)(3) whose mission is to revitalize
+          America's commitment to the principles of liberal democracy by educating and inspiring
+          Americans about our nation's economic journey, civic responsibilities, and the
+          foundations of our republic. Through workshops, talks, community engagement, and
+          multimedia outreach, we aim to empower Americans with the knowledge and tools
+          necessary to actively participate in and preserve our democratic institutions.
+        </p>
+
+        <h2>Vision</h2>
+        <p>
+          We envision an America where every citizen is an informed and engaged steward of our
+          democratic principles, actively contributing to the strength and resilience of our
+          republic.
+        </p>
+      </div>
+
+      <figure class="mission__art">
+        <Image
+          src={emblem}
+          alt="Tocqueville Liberty Institute emblem: an illustrated Statue of Liberty raising a torch, framed by a laurel wreath"
+          widths={[400, 800]}
+          sizes="(max-width: 900px) 80vw, 400px"
+          loading="lazy"
+        />
+      </figure>
+    </div>
+  </section>
+
+  <section class="section section--tint">
+    <div class="wrap">
+      <h2>Core values</h2>
+      <ul class="values">
+        {
+          values.map((v) => (
+            <li>
+              <h3>{v.title}</h3>
+              <p>{v.body}</p>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Latest essays</h2>
+        <a href="/blog/">All essays<span aria-hidden="true"> →</span></a>
+      </div>
+      <ul class="cards">
+        {
+          latest.map((p) => (
+            <li>
+              <PostCard {...p} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  {
+    LINKS.substack && (
+      <section class="wrap subscribe-band">
+        <Subscribe />
+      </section>
+    )
+  }
+</BaseLayout>
+
+<style>
+  .hero {
+    padding-block: clamp(3rem, 8vw, 6rem) clamp(2rem, 5vw, 3.5rem);
+    text-align: center;
+  }
+
+  .lede {
+    max-width: 62ch;
+    margin-inline: auto;
+    font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: var(--ink-muted);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    justify-content: center;
+    margin-top: 2rem;
+  }
+
+  .founder,
+  .mission {
+    display: grid;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    align-items: center;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 781px) {
+    .founder {
+      grid-template-columns: minmax(0, 380px) 1fr;
+    }
+    .mission {
+      grid-template-columns: 1fr minmax(0, 400px);
+    }
+  }
+
+  figure {
+    margin: 0;
+  }
+
+  .founder__portrait img {
+    width: 100%;
+    border-radius: var(--radius);
+    /* The source photo is a tight head-and-shoulders crop; bias to the top so
+       the face is never cut off at narrow widths. */
+    aspect-ratio: 4 / 5;
+    object-fit: cover;
+    object-position: 50% 20%;
+  }
+
+  .mission__art img {
+    width: 100%;
+    border-radius: var(--radius);
+  }
+
+  .values {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .values li {
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+  }
+
+  .values h3 {
+    color: var(--purple);
+    font-size: 1.1rem;
+  }
+
+  .values p {
+    margin: 0;
+    color: var(--ink-muted);
+  }
+
+  .section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+
+  .section-head h2 {
+    margin: 0;
+  }
+
+  .section-head a {
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .section-head a:hover {
+    text-decoration: underline;
+  }
+
+  .cards {
+    display: grid;
+    gap: 1.25rem;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  .subscribe-band {
+    padding-bottom: clamp(3rem, 7vw, 5rem);
+  }
+</style>

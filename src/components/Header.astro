@@ -1,0 +1,94 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/site/logo-wordmark.png';
+import { NAV, LINKS, SITE } from '../consts';
+
+const path = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="wrap bar">
+    <a href="/" class="brand">
+      {/* The wordmark artwork already carries the tagline — don't repeat it as text. */}
+      <Image
+        src={logo}
+        alt={`${SITE.name} — ${SITE.tagline}`}
+        width={330}
+        densities={[1, 2]}
+        loading="eager"
+      />
+    </a>
+
+    <nav aria-label="Primary">
+      <ul>
+        {
+          NAV.map((item) => (
+            <li>
+              <a href={item.href} aria-current={path.startsWith(item.href) ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+        <li><a class="btn" href={LINKS.donate}>Donate</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+
+  .bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-block: 1rem;
+  }
+
+  .brand {
+    display: block;
+    text-decoration: none;
+    line-height: 0;
+  }
+
+  .brand img {
+    width: clamp(210px, 30vw, 300px);
+    height: auto;
+  }
+
+  nav ul {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: clamp(0.75rem, 2.5vw, 1.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  nav a {
+    text-decoration: none;
+    font-weight: 500;
+    color: var(--ink);
+  }
+
+  nav a:hover,
+  nav a[aria-current='page'] {
+    color: var(--purple);
+  }
+
+  nav a.btn {
+    color: #fff;
+  }
+
+  nav a[aria-current='page']:not(.btn) {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+</style>
