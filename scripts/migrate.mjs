@@ -49,7 +49,7 @@ turndown.addRule('audio', {
   filter: 'audio',
   replacement: (_content, node) => {
     const src = node.getAttribute('src');
-    return src ? `\n\n<audio controls preload="none" src="${src}"></audio>\n\n` : '';
+    return src ? `\n\n<audio controls preload="metadata" src="${src}"></audio>\n\n` : '';
   },
 });
 

@@ -6,7 +6,7 @@ permalink: "/2026/06/18/podcast-episode-make-iran-great-again/"
 wpUrl: "https://thetocque.org/2026/06/18/podcast-episode-make-iran-great-again/"
 ---
 
-<audio controls preload="none" src="/media/podcast-make-iran-great-again.m4a"></audio>
+<audio controls preload="metadata" src="/media/podcast-make-iran-great-again.m4a"></audio>
 
 ![A cracked stone arch reading ISLAMIC REPUBLIC with crowds of Iranian protesters passing beneath it toward a sunlit city, a portrait of Alexis de Tocqueville at the right and the caption "Liberty cannot be established without morality, nor morality without faith"](../../assets/wp/arch-1.png)
 
