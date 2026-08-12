@@ -33,6 +33,18 @@ Only the apex A records change. Everything else stays exactly as above.
 | TXT | @ | hosting-site=thetocque |
 | A | @ | 199.36.158.100 |
 
+**Changed**
+
+| Type | Name | From | To |
+|---|---|---|---|
+| CNAME | www | thetocque.org. | thetocque.web.app. |
+
+Firebase issues its certificate per hostname. With `www` CNAME'd at the apex,
+the domain resolved but the TLS handshake failed, because the cert Firebase
+issued covers `thetocque.org` only. `www.thetocque.org` is now registered as a
+second custom domain in Firebase Hosting, set to 301-redirect to the bare
+domain, which matches the canonical URLs the site already emits.
+
 **Remove**
 
 | Type | Name | Value |
@@ -47,8 +59,8 @@ Only the apex A records change. Everything else stays exactly as above.
 - **Both SPF TXT records** — the apex one delegates to `dc-aa8e722993._spfm`,
   which delegates to Google. They only work as a pair.
 - **The google-site-verification TXT** — removing it drops Search Console access.
-- **The `www` CNAME** — points at the apex, so it follows the A records
-  automatically once they change.
+- **All five MX records and both SPF halves** — checked again after the
+  cutover and confirmed unchanged.
 
 ## Rollback
 
