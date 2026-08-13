@@ -38,4 +38,7 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           channelId: live
-          projectId: ${{ vars.FIREBASE_PROJECT_ID }}
+          # Not a secret, and already the default in .firebaserc. Hardcoded so
+          # setup is one secret and nothing else; an unset repo variable here
+          # resolves to an empty string and fails in a confusing way.
+          projectId: thetocque

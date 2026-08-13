@@ -56,13 +56,13 @@ happens when someone deploys by hand from this machine.
    `dist/` and `.astro/` are gitignored.
 3. In the Firebase console, generate a service account key with the
    Firebase Hosting Admin role.
-4. In the GitHub repo, add:
-   - secret `FIREBASE_SERVICE_ACCOUNT` — the full service account JSON
-   - variable `FIREBASE_PROJECT_ID` — `thetocque`
+4. In the GitHub repo, add one secret: `FIREBASE_SERVICE_ACCOUNT`, set to
+   the full service account JSON.
 
-   Note these are referenced differently in the workflow:
-   `secrets.FIREBASE_SERVICE_ACCOUNT` but `vars.FIREBASE_PROJECT_ID`. The
-   project id is a repository *variable*, not a secret.
+   The project id is *not* configured here — it is hardcoded as
+   `thetocque` in the workflow, matching `.firebaserc`. It is not a
+   secret, and reading it from a repo variable meant an unset variable
+   resolved to an empty string and failed obscurely.
 5. Trigger a run from the Actions tab (`workflow_dispatch`) to confirm
    before relying on the cron.
 
