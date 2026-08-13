@@ -13,7 +13,7 @@
     "check": "astro check",
     "og": "node scripts/make-og-image.mjs",
     "migrate": "node scripts/migrate.mjs",
-    "deploy": "npm run build && firebase deploy --only hosting"
+    "deploy": "npm run build && npx --package firebase-tools firebase deploy --only hosting"
   },
   "dependencies": {
     "@astrojs/rss": "^4.0.19",
@@ -27,6 +27,6 @@
     "turndown": "^7.2.4",
     "typescript": "^6.0.3"
   },
-  "description": "The Tocqueville Liberty Institute \u2014 static site (Astro + Firebase Hosting)",
+  "description": "The Tocqueville Liberty Institute — static site (Astro + Firebase Hosting)",
   "private": true
 }
