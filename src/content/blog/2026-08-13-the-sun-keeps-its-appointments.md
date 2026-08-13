@@ -2,7 +2,7 @@
 title: "The Sun Keeps Its Appointments"
 description: "Bottom line up front: last Wednesday the moon kept an appointment made before any of us were born, and the same week Washington proved it cannot keep the rules of money or justice fixed for even one news cycle. A free country needs its fixed laws where they matter most. We have put ours in the wrong places."
 pubDate: 2026-08-13
-author: "The Major"
+author: "The Colonel"
 permalink: "/2026/08/13/the-sun-keeps-its-appointments/"
 tags: ["Sound Money", "Rule of Law", "Faith and Liberty"]
 ---
