@@ -36,7 +36,9 @@ jobs:
         uses: FirebaseExtended/action-hosting-deploy@v0
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          # Name is set by `firebase init hosting:github`, which suffixes the
+          # project id. Must match the secret that command created.
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_THETOCQUE }}
           channelId: live
           # Not a secret, and already the default in .firebaserc. Hardcoded so
           # setup is one secret and nothing else; an unset repo variable here

@@ -54,10 +54,20 @@ happens when someone deploys by hand from this machine.
    The tree has been scanned for credentials and is clean — no `.env`,
    no keys, no service-account JSON, in the working tree or in history.
    `dist/` and `.astro/` are gitignored.
-3. In the Firebase console, generate a service account key with the
-   Firebase Hosting Admin role.
-4. In the GitHub repo, add one secret: `FIREBASE_SERVICE_ACCOUNT`, set to
-   the full service account JSON.
+3. Create the service account and install the secret in one step:
+   ```
+   npx --package firebase-tools firebase init hosting:github
+   ```
+   This creates a correctly-scoped service account and writes the secret
+   into the GitHub repo, so no key is ever handled by hand. Decline its
+   offer to create workflow files, or delete them afterward — it writes a
+   `firebase-hosting-merge.yml` that duplicates `deploy.yml`.
+
+   The secret it creates is named **`FIREBASE_SERVICE_ACCOUNT_THETOCQUE`**
+   — the CLI suffixes the project id. `deploy.yml` references that exact
+   name. If the secret is ever regenerated under a different name, the
+   workflow must be updated to match, or deploys fail on an empty
+   credential.
 
    The project id is *not* configured here — it is hardcoded as
    `thetocque` in the workflow, matching `.firebaserc`. It is not a
