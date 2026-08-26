@@ -63,6 +63,36 @@ const values = [
   </section>
 
   <section class="section section--tint">
+    <div class="wrap">
+      <div class="section-head">
+        <h2>Latest essays</h2>
+        <a href="/blog/">All essays<span aria-hidden="true"> →</span></a>
+      </div>
+      <ul class="cards">
+        {
+          latest.map((p) => (
+            <li>
+              <PostCard {...p} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <a class="feature" href="/six-days-notice/">
+      <p class="feature__kicker">A storybook of record</p>
+      <h2 class="feature__title">Six Days&rsquo; Notice</h2>
+      <p class="feature__sub">
+        The Japanese Americans of Bainbridge Island, the war that took them, and
+        the neighbors who kept their farms. Free to read, free to download.
+      </p>
+      <span class="feature__cta">Read the book<span aria-hidden="true"> &rarr;</span></span>
+    </a>
+  </section>
+
+  <section class="section">
     <div class="wrap founder">
       <figure class="founder__portrait">
         <Image
@@ -95,7 +125,7 @@ const values = [
     </div>
   </section>
 
-  <section class="section">
+  <section class="section section--tint">
     <div class="wrap mission">
       <div class="mission__text">
         <h2>Mission</h2>
@@ -128,7 +158,7 @@ const values = [
     </div>
   </section>
 
-  <section class="section section--tint">
+  <section class="section">
     <div class="wrap">
       <h2>Core values</h2>
       <ul class="values">
@@ -142,36 +172,6 @@ const values = [
         }
       </ul>
     </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Latest essays</h2>
-        <a href="/blog/">All essays<span aria-hidden="true"> →</span></a>
-      </div>
-      <ul class="cards">
-        {
-          latest.map((p) => (
-            <li>
-              <PostCard {...p} />
-            </li>
-          ))
-        }
-      </ul>
-    </div>
-  </section>
-
-  <section class="wrap">
-    <a class="feature" href="/six-days-notice/">
-      <p class="feature__kicker">A storybook of record</p>
-      <h2 class="feature__title">Six Days&rsquo; Notice</h2>
-      <p class="feature__sub">
-        The Japanese Americans of Bainbridge Island, the war that took them, and
-        the neighbors who kept their farms. Free to read, free to download.
-      </p>
-      <span class="feature__cta">Read the book<span aria-hidden="true"> &rarr;</span></span>
-    </a>
   </section>
 
   {
