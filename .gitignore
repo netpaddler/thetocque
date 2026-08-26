@@ -22,3 +22,6 @@ pnpm-debug.log*
 
 # jetbrains setting folder
 .idea/
+
+# Source archive for the Six Days Notice book, extracted into src/ and public/
+thetocque.zip

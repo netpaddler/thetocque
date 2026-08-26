@@ -1,0 +1,395 @@
+<style>
+  /* The book's own palette, kept local to this page. */
+  .book {
+    --cream: #f6f1e4;
+    --ink: #211c15;
+    --band: #241f19;
+    --tan: #a98f63;
+    --gray: #6e6353;
+    --faint: #b9ad97;
+    --mat: #e3dac6;
+    --measure: 34rem;
+
+    background: var(--cream);
+    color: var(--ink);
+    font-family: Iowan Old Style, Palatino, Georgia, Times New Roman, serif;
+    padding-bottom: clamp(3rem, 8vw, 6rem);
+  }
+
+  /* global.css styles bare <blockquote> with a purple rule and muted ink.
+     Reset only what clashes; margin is left alone so .pull and .epigraph
+     keep theirs without a specificity fight. */
+  .book blockquote {
+    padding: 0;
+    border-left: 0;
+    color: inherit;
+  }
+
+  .book :is(h1, h2) {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+  }
+
+  /* ---------------------------------------------------------------- cover */
+  .cover {
+    background: var(--band);
+    padding: clamp(2rem, 6vw, 4rem) 1.25rem;
+  }
+
+  .cover__frame {
+    max-width: 40rem;
+    margin-inline: auto;
+    padding: clamp(2.5rem, 7vw, 4.5rem) 1.5rem;
+    border: 1.2px solid var(--tan);
+    outline: 0.6px solid #4a4136;
+    outline-offset: 8px;
+    text-align: center;
+  }
+
+  .cover__motto {
+    color: var(--tan);
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    margin: 0;
+  }
+
+  .cover__gloss {
+    color: var(--faint);
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    font-size: 0.58rem;
+    margin: 0.4rem 0 0;
+  }
+
+  .cover h1 {
+    color: #f2ebda;
+    font-size: clamp(2rem, 7vw, 3.1rem);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin: clamp(2rem, 6vw, 3rem) 0 0;
+  }
+
+  .cover h1::after {
+    content: '';
+    display: block;
+    width: 11rem;
+    max-width: 60%;
+    height: 0.8px;
+    background: var(--tan);
+    margin: 1.1rem auto 0;
+  }
+
+  .cover__sub {
+    color: #d8cdb6;
+    font-style: italic;
+    font-size: clamp(1rem, 2.4vw, 1.2rem);
+    line-height: 1.5;
+    margin: 1.2rem 0 0;
+  }
+
+  .cover__kicker,
+  .cover__dates {
+    font-family: Poppins, system-ui, sans-serif;
+    font-size: 0.62rem;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .cover__kicker {
+    color: var(--faint);
+    margin-top: clamp(2.5rem, 7vw, 4rem);
+  }
+
+  .cover__dates {
+    color: var(--tan);
+    margin-top: 0.55rem;
+  }
+
+  /* ------------------------------------------------------------ epigraph */
+  .epigraph {
+    max-width: 30rem;
+    margin: clamp(3rem, 8vw, 5rem) auto 0;
+    padding-inline: 1.25rem;
+    text-align: center;
+  }
+
+  .epigraph blockquote {
+    font-style: italic;
+    font-size: clamp(1.05rem, 2.5vw, 1.22rem);
+    line-height: 1.62;
+    margin: 0;
+  }
+
+  .attr {
+    color: var(--gray);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    margin: 1.4rem 0 0;
+  }
+
+  .attr::before {
+    content: '';
+    display: block;
+    width: 5rem;
+    height: 0.7px;
+    background: var(--tan);
+    margin: 0 auto 1rem;
+  }
+
+  /* ------------------------------------------------------------ download */
+  .download {
+    text-align: center;
+    margin: clamp(2.5rem, 7vw, 4rem) auto 0;
+    padding-inline: 1.25rem;
+  }
+
+  .download a {
+    display: inline-block;
+    font-family: Poppins, system-ui, sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink);
+    text-decoration: none;
+    border: 1px solid var(--tan);
+    padding: 0.85rem 1.6rem;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .download a:hover,
+  .download a:focus-visible {
+    background: var(--band);
+    color: var(--cream);
+  }
+
+  .download__meta {
+    display: block;
+    color: var(--gray);
+    font-size: 0.76rem;
+    margin-top: 0.7rem;
+  }
+
+  /* ------------------------------------------------------------- chapter */
+  .chapter {
+    max-width: var(--measure);
+    margin: clamp(3.5rem, 9vw, 6rem) auto 0;
+    padding-inline: 1.25rem;
+  }
+
+  .chapter__head {
+    text-align: center;
+    margin-bottom: 2.2rem;
+  }
+
+  .kicker {
+    font-family: Poppins, system-ui, sans-serif;
+    color: var(--tan);
+    font-size: 0.6rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin: 0 0 1.1rem;
+  }
+
+  .chapter h2 {
+    font-size: clamp(1.35rem, 3.6vw, 1.72rem);
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .dates {
+    color: var(--gray);
+    font-style: italic;
+    font-size: 0.92rem;
+    margin: 0.5rem 0 0;
+  }
+
+  .chapter__head::after {
+    content: '';
+    display: block;
+    width: 6.9rem;
+    height: 0.7px;
+    background: var(--tan);
+    margin: 1.15rem auto 0;
+  }
+
+  .body {
+    font-size: 1.03rem;
+    line-height: 1.72;
+    margin: 0 0 1.15rem;
+  }
+
+  .body :is(i, em) {
+    font-style: italic;
+  }
+
+  /* --------------------------------------------------------- pull quote */
+  .pull {
+    margin: 2rem auto 0;
+    max-width: 28rem;
+    text-align: center;
+  }
+
+  .pull::before {
+    content: '';
+    display: block;
+    width: 5rem;
+    height: 0.7px;
+    background: var(--tan);
+    margin: 0 auto 1.3rem;
+  }
+
+  .pull p {
+    font-style: italic;
+    font-size: 1.08rem;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .pull cite {
+    display: block;
+    color: var(--gray);
+    font-size: 0.82rem;
+    font-style: normal;
+    letter-spacing: 0.04em;
+    margin-top: 0.9rem;
+  }
+
+  /* -------------------------------------------------------------- plate */
+  .plate {
+    max-width: 48rem;
+    margin: clamp(3rem, 8vw, 4.5rem) auto 0;
+    padding-inline: 1.25rem;
+  }
+
+  .plate__band {
+    background: var(--band);
+    color: #efe7d4;
+    font-size: 0.72rem;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 0.85rem 1rem;
+    margin: 0;
+  }
+
+  .plate__mat {
+    background: var(--mat);
+    border: 0.8px solid #8c7b5e;
+    border-top: 0;
+    padding: 7px;
+  }
+
+  .plate img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .plate figcaption {
+    color: var(--gray);
+    font-size: 0.86rem;
+    line-height: 1.55;
+    text-align: center;
+    margin-top: 1.1rem;
+  }
+
+  /* ----------------------------------------------------------- timeline */
+  .timeline {
+    max-width: 38rem;
+  }
+
+  .timeline dl {
+    margin: 0;
+  }
+
+  .timeline__row {
+    display: grid;
+    grid-template-columns: 7.5rem 1fr;
+    gap: 0 1.5rem;
+    padding: 0.62rem 0;
+    border-top: 0.7px solid rgba(169, 143, 99, 0.32);
+  }
+
+  .timeline__row:first-child {
+    border-top: 0;
+  }
+
+  .timeline dt {
+    font-family: Poppins, system-ui, sans-serif;
+    color: var(--tan);
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding-top: 0.22rem;
+  }
+
+  .timeline dd {
+    margin: 0;
+    font-size: 0.97rem;
+    line-height: 1.6;
+  }
+
+  /* ------------------------------------------------------------ sources */
+  .sources {
+    max-width: 36rem;
+  }
+
+  .sources .body {
+    font-size: 0.95rem;
+    line-height: 1.68;
+  }
+
+  /* ---------------------------------------------------------- colophon */
+  .colophon {
+    text-align: center;
+    margin-top: clamp(3.5rem, 9vw, 5.5rem);
+  }
+
+  .colophon__motto {
+    color: var(--tan);
+    font-size: 0.72rem;
+    letter-spacing: 0.34em;
+    text-transform: uppercase;
+    margin: 0;
+  }
+
+  .colophon__motto::before {
+    content: '';
+    display: block;
+    width: 5rem;
+    height: 0.7px;
+    background: var(--tan);
+    margin: 0 auto 1.4rem;
+  }
+
+  @media (max-width: 30rem) {
+    .timeline__row {
+      grid-template-columns: 1fr;
+      gap: 0.3rem;
+    }
+  }
+
+  /* Author's note. Shares the chapter measure but reads as a personal aside. */
+  .note {
+    max-width: 32rem;
+    margin: clamp(3rem, 8vw, 4.5rem) auto 0;
+    padding: clamp(1.75rem, 5vw, 2.5rem) clamp(1.5rem, 5vw, 2.5rem);
+    border-block: 0.7px solid rgba(169, 143, 99, 0.45);
+  }
+
+  .note .kicker {
+    text-align: center;
+  }
+
+  .note p {
+    font-size: 1.01rem;
+    line-height: 1.72;
+    margin: 0 0 1.05rem;
+  }
+
+  .note p:last-child {
+    margin-bottom: 0;
+  }
+</style>
