@@ -36,20 +36,6 @@ const latest = [
   .sort((a, b) => b.date.valueOf() - a.date.valueOf())
   .slice(0, 3);
 
-const values = [
-  {
-    title: 'Civic Education',
-    body: 'Promoting a deep understanding of American history, government, and economics.',
-  },
-  {
-    title: 'Active Citizenship',
-    body: 'Encouraging participation in democratic processes at all levels.',
-  },
-  {
-    title: 'Critical Thinking',
-    body: 'Fostering the ability to analyze information and make informed decisions.',
-  },
-];
 ---
 
 <BaseLayout>
@@ -130,19 +116,13 @@ const values = [
       <div class="mission__text">
         <h2>Mission</h2>
         <p>
-          The Tocqueville Liberty Institute is a 501(c)(3) whose mission is to revitalize
-          America's commitment to the principles of liberal democracy by educating and inspiring
-          Americans about our nation's economic journey, civic responsibilities, and the
-          foundations of our republic. Through workshops, talks, community engagement, and
-          multimedia outreach, we aim to empower Americans with the knowledge and tools
-          necessary to actively participate in and preserve our democratic institutions.
+          We work through workshops, talks, community engagement, and multimedia
+          outreach, toward an America where citizens understand the republic well
+          enough to keep it. Three commitments run through all of it: civic
+          education, active citizenship, and critical thinking.
         </p>
-
-        <h2>Vision</h2>
-        <p>
-          We envision an America where every citizen is an informed and engaged steward of our
-          democratic principles, actively contributing to the strength and resilience of our
-          republic.
+        <p class="mission__more">
+          <a href="/about/">Mission, vision, and values in full<span aria-hidden="true"> &rarr;</span></a>
         </p>
       </div>
 
@@ -155,22 +135,6 @@ const values = [
           loading="lazy"
         />
       </figure>
-    </div>
-  </section>
-
-  <section class="section">
-    <div class="wrap">
-      <h2>Core values</h2>
-      <ul class="values">
-        {
-          values.map((v) => (
-            <li>
-              <h3>{v.title}</h3>
-              <p>{v.body}</p>
-            </li>
-          ))
-        }
-      </ul>
     </div>
   </section>
 
@@ -319,6 +283,19 @@ const values = [
   .values p {
     margin: 0;
     color: var(--ink-muted);
+  }
+
+  /* Matches the "All essays" link treatment in .section-head. */
+  .mission__more {
+    margin-bottom: 0;
+  }
+
+  .mission__more a {
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .mission__more a:hover {
+    text-decoration: underline;
   }
 
   .section-head {
