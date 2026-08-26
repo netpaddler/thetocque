@@ -10,29 +10,31 @@ import { CONTACT, LINKS, SITE } from '../consts';
 import { getSubstackPosts } from '../lib/substack';
 import { truncate } from '../lib/text';
 
-// New writing lives on Substack; until that publication has posts we surface
-// the migrated archive so this section is never empty.
+// Substack is where new writing goes; the migrated archive lives here. Merge
+// both and let recency decide, so the newest piece from either source leads
+// and this site's own essays never drop off the homepage entirely.
 const substack = await getSubstackPosts(3);
 
-const archive = (await getCollection('blog'))
-  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
-  .slice(0, 3);
+const archive = await getCollection('blog');
 
-const latest = substack.length
-  ? substack.map((p) => ({
-      href: p.link,
-      title: p.title,
-      description: truncate(p.description, 160),
-      date: p.pubDate,
-      external: true,
-    }))
-  : archive.map((p) => ({
-      href: p.data.permalink,
-      title: p.data.title,
-      description: truncate(p.data.description, 160),
-      date: p.data.pubDate,
-      external: false,
-    }));
+const latest = [
+  ...substack.map((p) => ({
+    href: p.link,
+    title: p.title,
+    description: truncate(p.description, 160),
+    date: p.pubDate,
+    external: true,
+  })),
+  ...archive.map((p) => ({
+    href: p.data.permalink,
+    title: p.data.title,
+    description: truncate(p.data.description, 160),
+    date: p.data.pubDate,
+    external: false,
+  })),
+]
+  .sort((a, b) => b.date.valueOf() - a.date.valueOf())
+  .slice(0, 3);
 
 const values = [
   {
