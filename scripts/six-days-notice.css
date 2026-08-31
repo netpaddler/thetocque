@@ -30,81 +30,40 @@
     letter-spacing: 0.06em;
   }
 
-  /* ---------------------------------------------------------------- cover */
-  .cover {
-    background: var(--band);
-    padding: clamp(2rem, 6vw, 4rem) 1.25rem;
-  }
-
-  .cover__frame {
-    max-width: 40rem;
+  /* ------------------------------------------------------------- masthead */
+  .masthead {
+    max-width: 38rem;
     margin-inline: auto;
-    padding: clamp(2.5rem, 7vw, 4.5rem) 1.5rem;
-    border: 1.2px solid var(--tan);
-    outline: 0.6px solid #4a4136;
-    outline-offset: 8px;
+    padding: clamp(3rem, 8vw, 5rem) 1.25rem 0;
     text-align: center;
   }
 
-  .cover__motto {
-    color: var(--tan);
-    letter-spacing: 0.34em;
+  .masthead h1 {
+    color: var(--ink);
+    font-size: clamp(1.9rem, 5.5vw, 2.9rem);
+    letter-spacing: 0.07em;
     text-transform: uppercase;
-    font-size: 0.7rem;
+    line-height: 1.15;
     margin: 0;
   }
 
-  .cover__gloss {
-    color: var(--faint);
-    letter-spacing: 0.26em;
-    text-transform: uppercase;
-    font-size: 0.58rem;
-    margin: 0.4rem 0 0;
-  }
-
-  .cover h1 {
-    color: #f2ebda;
-    font-size: clamp(2rem, 7vw, 3.1rem);
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    margin: clamp(2rem, 6vw, 3rem) 0 0;
-  }
-
-  .cover h1::after {
+  .masthead h1::after {
     content: '';
     display: block;
-    width: 11rem;
-    max-width: 60%;
+    width: 9rem;
+    max-width: 55%;
     height: 0.8px;
     background: var(--tan);
-    margin: 1.1rem auto 0;
+    margin: 1.4rem auto 0;
   }
 
-  .cover__sub {
-    color: #d8cdb6;
+  .standfirst {
+    max-width: 31rem;
+    margin: 1.4rem auto 0;
+    color: var(--gray);
     font-style: italic;
-    font-size: clamp(1rem, 2.4vw, 1.2rem);
-    line-height: 1.5;
-    margin: 1.2rem 0 0;
-  }
-
-  .cover__kicker,
-  .cover__dates {
-    font-family: Poppins, system-ui, sans-serif;
-    font-size: 0.62rem;
-    letter-spacing: 0.24em;
-    text-transform: uppercase;
-    margin: 0;
-  }
-
-  .cover__kicker {
-    color: var(--faint);
-    margin-top: clamp(2.5rem, 7vw, 4rem);
-  }
-
-  .cover__dates {
-    color: var(--tan);
-    margin-top: 0.55rem;
+    font-size: clamp(1.02rem, 2.4vw, 1.18rem);
+    line-height: 1.58;
   }
 
   /* ------------------------------------------------------------ epigraph */
@@ -140,21 +99,23 @@
 
   /* ------------------------------------------------------------ download */
   .download {
+    max-width: 34rem;
+    margin: clamp(3.5rem, 9vw, 5rem) auto 0;
+    padding: clamp(2rem, 6vw, 2.75rem) 1.25rem 0;
+    border-top: 0.7px solid rgba(169, 143, 99, 0.45);
     text-align: center;
-    margin: clamp(2.5rem, 7vw, 4rem) auto 0;
-    padding-inline: 1.25rem;
   }
 
   .download a {
     display: inline-block;
     font-family: Poppins, system-ui, sans-serif;
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     letter-spacing: 0.18em;
     text-transform: uppercase;
     color: var(--ink);
     text-decoration: none;
     border: 1px solid var(--tan);
-    padding: 0.85rem 1.6rem;
+    padding: 0.8rem 1.5rem;
     transition: background 0.15s ease, color 0.15s ease;
   }
 

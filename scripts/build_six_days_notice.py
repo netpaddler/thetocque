@@ -5,14 +5,16 @@ The narrative, captions, timeline and sources are lifted verbatim from
 build_book.py, the script that produced Six_Days_Notice.pdf, so the page and
 the printed book cannot drift apart and no prose is ever retyped.
 
-Usage:  BOOKSRC=/path/to/build_book.py python3 scripts/build_six_days_notice.py
+Usage:  python3 scripts/build_six_days_notice.py
 
 Page styles live in scripts/six-days-notice.css and are inlined on generation;
 edit that file, not the generated .astro.
 """
 import ast, json, io, os
 
-SRC = os.environ['BOOKSRC']
+# The book's own reportlab source, vendored so the page is reproducible from
+# this repo alone. Override with BOOKSRC to regenerate from an updated copy.
+SRC = os.environ.get('BOOKSRC', 'scripts/six-days-notice.book.py')
 OUT = 'src/pages/six-days-notice.astro'
 CSS = 'scripts/six-days-notice.css'
 
@@ -103,29 +105,13 @@ L.append('''<BaseLayout
   type="article"
 >
   <article class="book">
-    <header class="cover">
-      <div class="cover__frame">
-        <p class="cover__motto">Nidoto Nai Yoni</p>
-        <p class="cover__gloss">Let it not happen again</p>
-        <h1>Six Days&rsquo; Notice</h1>
-        <p class="cover__sub">
-          The Japanese Americans of Bainbridge Island,<br />
-          the war that took them, and the neighbors<br />
-          who kept their farms
-        </p>
-        <p class="cover__kicker">A storybook of record</p>
-        <p class="cover__dates">1883 &middot; 1942 &middot; 1945 &middot; Today</p>
-      </div>
+    <header class="masthead">
+      <h1>Six Days&rsquo; Notice</h1>
+      <p class="standfirst">
+        The Japanese Americans of Bainbridge Island, the war that took them, and
+        the neighbors who kept their farms.
+      </p>
     </header>
-
-    <section class="epigraph">
-      <blockquote>
-        &ldquo;Let it not happen again that a group of people are singled out, that
-        their loyalty and patriotism be questioned because of their race or
-        ancestry.&rdquo;
-      </blockquote>
-      <p class="attr">Bainbridge Island Japanese American Exclusion Memorial</p>
-    </section>
 
     <section class="note">
       <p class="kicker">Why this exists</p>
@@ -146,12 +132,14 @@ L.append('''<BaseLayout
       </p>
     </section>
 
-    <p class="download">
-      <a href="/six-days-notice.pdf" download>
-        Download the printable book <span aria-hidden="true">&darr;</span>
-      </a>
-      <span class="download__meta">28 pages, letter size, PDF</span>
-    </p>
+    <section class="epigraph">
+      <blockquote>
+        &ldquo;Let it not happen again that a group of people are singled out, that
+        their loyalty and patriotism be questioned because of their race or
+        ancestry.&rdquo;
+      </blockquote>
+      <p class="attr">Bainbridge Island Japanese American Exclusion Memorial</p>
+    </section>
 
     {
       sections.map((s) =>
@@ -214,6 +202,13 @@ L.append('''<BaseLayout
         )
       )
     }
+
+    <p class="download">
+      <a href="/six-days-notice.pdf" download>
+        Also available as a printable book <span aria-hidden="true">&darr;</span>
+      </a>
+      <span class="download__meta">28 pages, letter size, PDF</span>
+    </p>
 
     <footer class="colophon">
       <p class="colophon__motto">Nidoto Nai Yoni</p>
