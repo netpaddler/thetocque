@@ -41,6 +41,10 @@ const description =
             a basement, at noon, on the anniversary of the massacre the island was forbidden to
             name.
           </p>
+          <p class="pub-note">
+            Published as civic education: the record of a country that lived thirty eight years
+            without the republic's guardrails, and of the people who built them.
+          </p>
         </div>
         <aside class="seal-block">
           <div class="seal" role="img" aria-label="A seal reading two two eight">
@@ -1201,6 +1205,18 @@ const description =
 
   .lede {
     font-size: clamp(1.05rem, 2vw, 1.25rem);
+    color: var(--ink-muted);
+  }
+
+  /* The Institute's one-line reason for publishing; kept subordinate to the
+     lede so the story stays in front. */
+  .pub-note {
+    max-width: 52ch;
+    margin: 1.5rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: 0.9375rem;
+    line-height: 1.6;
     color: var(--ink-muted);
   }
 
