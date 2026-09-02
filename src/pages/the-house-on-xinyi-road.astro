@@ -1,6 +1,23 @@
 ---
+import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Subscribe from '../components/Subscribe.astro';
+/**
+ * Images are from Wikimedia Commons; licences were verified on the file pages:
+ * - monopoly-bureau-1947: File:228 Incident h.jpg (PD-Taiwan-1996, PD in the US)
+ * - formosa-magazine-no1: File:美麗島雜誌第一期 Formosa - The Magazine of TAIWAN's
+ *   Democratic Movement (No. 1).jpg (CC BY 2.0, Christopher Adams)
+ * - first-court-jingmei: File:第一法庭04.jpg (CC BY-SA 4.0, 吳蕙宇)
+ * - gikong-church-2011: File:Gikong Presbyterian Church main entrance 20110228.jpg
+ *   (CC BY 2.0, MiNe)
+ * - lin-yi-hsiung-2014: File:20140422 落實民主 停建核四 林義雄禁食行動 IMG 0173
+ *   (13972407175) (cropped).jpg (CC BY-SA 2.0, 李忠衛)
+ */
+import monopolyBureau1947 from '../assets/xinyi-road/monopoly-bureau-1947.jpg';
+import formosaMagazine from '../assets/xinyi-road/formosa-magazine-no1.jpg';
+import firstCourt from '../assets/xinyi-road/first-court-jingmei.jpg';
+import gikongChurch from '../assets/xinyi-road/gikong-church-2011.jpg';
+import linYiHsiung from '../assets/xinyi-road/lin-yi-hsiung-2014.jpg';
 
 const title = 'The House on Xinyi Road';
 const description =
@@ -62,6 +79,22 @@ const description =
           </p>
           <p>Thirty three years later, to the day, a man let himself into a house on Xinyi Road.</p>
         </div>
+        <figure class="fig">
+          <Image
+            src={monopolyBureau1947}
+            alt="A dense crowd filling the street outside the three-storey Monopoly Bureau building in Taipei, white smoke rising among them"
+            widths={[480, 800, 1080]}
+            sizes="(min-width: 62rem) 896px, 100vw"
+            loading="lazy"
+          />
+          <figcaption>
+            The crowd outside the Monopoly Bureau's Taipei branch on 28 February 1947, smoke
+            rising from the bureau's confiscated goods.
+            <span class="fig-credit"
+              >Photographer unknown, 1947. Public domain, via Wikimedia Commons.</span
+            >
+          </figcaption>
+        </figure>
       </section>
 
       <section class="sec">
@@ -173,6 +206,22 @@ const description =
             president.
           </p>
         </div>
+        <figure class="fig">
+          <Image
+            src={formosaMagazine}
+            alt="The first issue of Formosa magazine on display: a red-orange cover with large grey characters 美麗島 above the words Formosa, The Magazine of Taiwan's Democratic Movement, August 16, 1979"
+            widths={[480, 800, 1200]}
+            sizes="(min-width: 62rem) 896px, 100vw"
+            loading="lazy"
+          />
+          <figcaption>
+            The first issue of <em>Formosa</em>, dated 16 August 1979: &ldquo;The Magazine of
+            Taiwan's Democratic Movement.&rdquo;
+            <span class="fig-credit"
+              >Photo: Christopher Adams, CC BY 2.0, via Wikimedia Commons.</span
+            >
+          </figcaption>
+        </figure>
       </section>
 
       <section class="sec">
@@ -202,6 +251,20 @@ const description =
           </blockquote>
           <p>She had a day left.</p>
         </div>
+        <figure class="fig">
+          <Image
+            src={firstCourt}
+            alt="The restored First Court at Jingmei: a long dark wooden judges' bench with name plates and high-backed chairs, flanked by flags of the Republic of China, behind a metal defendants' rail"
+            widths={[480, 800, 1200]}
+            sizes="(min-width: 62rem) 896px, 100vw"
+            loading="lazy"
+          />
+          <figcaption>
+            The First Court at Jingmei, preserved at what is now the National Human Rights
+            Museum. The Kaohsiung Eight faced the military tribunal in this room in March 1980.
+            <span class="fig-credit">Photo: 吳蕙宇, CC BY-SA 4.0, via Wikimedia Commons.</span>
+          </figcaption>
+        </figure>
       </section>
 
       <section class="sec">
@@ -747,6 +810,22 @@ const description =
             Gikong <span class="hz">義光教會</span>. They hold a memorial service in it every 28
             February.
           </p>
+        </div>
+        <figure class="fig">
+          <Image
+            src={gikongChurch}
+            alt="The front of Gikong Presbyterian Church: a modest brick row house with red-tiled eaves, a vertical sign reading 義光基督長老教會, and people gathered inside the open door at the top of red-brick steps"
+            widths={[480, 800, 1200]}
+            sizes="(min-width: 62rem) 896px, 100vw"
+            loading="lazy"
+          />
+          <figcaption>
+            Gikong Presbyterian Church on the morning of 28 February 2011, the anniversary. The
+            house number by the door still reads 16.
+            <span class="fig-credit">Photo: MiNe, CC BY 2.0, via Wikimedia Commons.</span>
+          </figcaption>
+        </figure>
+        <div class="prose mt">
           <p>The basement where the three of them died is the children's Sunday school room.</p>
           <p>
             The pastor takes visitors down there. In the seam where the staircase meets the wall
@@ -765,6 +844,22 @@ const description =
             eating until the government halted construction of the fourth nuclear plant. It took
             nine days. He was seventy two.
           </p>
+        </div>
+        <figure class="fig fig--portrait">
+          <Image
+            src={linYiHsiung}
+            alt="Black and white portrait of Lin Yi-hsiung in a woven bamboo farmer's hat and plaid scarf, faintly smiling, a volunteer name tag reading 林義雄 pinned to his shirt"
+            widths={[360, 520, 832]}
+            sizes="(min-width: 32rem) 416px, 100vw"
+            loading="lazy"
+          />
+          <figcaption>
+            Lin Yi-hsiung arriving at the church on 22 April 2014 to begin his fast against the
+            fourth nuclear plant.
+            <span class="fig-credit">Photo: 李忠衛, CC BY-SA 2.0, via Wikimedia Commons.</span>
+          </figcaption>
+        </figure>
+        <div class="prose mt">
           <p>
             In August 2025 the Ministry of Culture designated the church a site of transitional
             justice significance <span class="hz">具轉型正義意涵場址</span>. The congregation had
@@ -1008,6 +1103,13 @@ const description =
             assessed from their published descriptions. Nothing on this page is sourced to the
             recordings themselves. The Linton family's account, as they tell it, is in the episode
             linked at the top of the list.
+          </p>
+          <p>
+            <strong>The images.</strong> The five photographs were added on 2 September 2026,
+            from Wikimedia Commons; each carries its credit and licence in its caption. The 1947
+            photograph is in the public domain in Taiwan and the United States. No photograph of
+            the 1979 rally or the 1980 court-martial circulates under a free licence, which is
+            why the preserved courtroom at Jingmei stands in for the trial.
           </p>
           <p>Compiled and verified 28 August 2026.</p>
         </div>
@@ -1486,6 +1588,38 @@ const description =
 
   .closer p:last-child {
     margin-bottom: 0;
+  }
+
+  /* ------------------------------------------------------------ figures */
+  .fig {
+    max-width: 56rem;
+    margin: 2rem 0 0;
+  }
+
+  .fig img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    border: 1px solid var(--rule);
+  }
+
+  .fig--portrait {
+    max-width: 26rem;
+  }
+
+  .fig figcaption {
+    max-width: var(--measure);
+    margin-top: 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: var(--ink-muted);
+  }
+
+  .fig-credit {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.78rem;
   }
 
   /* ---------------------------------------------------------- colophon */
