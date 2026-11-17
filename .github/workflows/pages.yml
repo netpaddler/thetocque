@@ -1,16 +1,15 @@
 # Deploy the static Astro build to GitHub Pages.
-# Firebase Hosting (deploy.yml) stays the live origin until DNS is cut over.
 #
-# This workflow has no schedule. deploy.yml rebuilds daily (0 11 * * * cron)
-# because the homepage reads the Substack feed at build time. After DNS moves,
-# add that cron here or new Substack posts stay off the homepage until the
-# next push.
+# The homepage reads the Substack feed at build time, so a daily rebuild is
+# what publishes new posts. 11:00 UTC is early morning US.
 
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+  schedule:
+    - cron: '0 11 * * *'
   workflow_dispatch:
 
 permissions:

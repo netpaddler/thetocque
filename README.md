@@ -1,7 +1,7 @@
 # theTocque.org
 
 Static site for **The Tocqueville Liberty Institute**, built with [Astro](https://astro.build)
-and hosted on Firebase Hosting.
+and hosted on GitHub Pages.
 
 ## Why this exists
 
@@ -35,17 +35,10 @@ subscribe CTAs are hidden.
 
 ## Deploying
 
-Firebase Hosting is still the live host. The build output is `dist/`.
+GitHub Pages publishes `dist/` from `.github/workflows/pages.yml` on every
+push to `main`, on a daily 11:00 UTC rebuild (so new Substack posts show up
+on the homepage), and on `workflow_dispatch`. See `docs/deploy.md`.
 
-```
-npm run build
-npx firebase-tools deploy --only hosting
-```
-
-GitHub Pages is prepared in `.github/workflows/pages.yml` and does not receive
-traffic until DNS changes. See `docs/deploy.md`.
-
-`firebase.json` sets long cache lifetimes for hashed `/_astro/` assets, no-cache for HTML,
-security headers, and a rewrite so `/feed/` serves the RSS feed at its WordPress-era path.
-Pages cannot set those headers or that rewrite; the build copies the feed to
-`feed/index.xml` so `/feed/` still returns the RSS document there.
+The build copies the RSS file to `feed/index.xml` so `/feed/` still returns
+the feed, and to `rss.xml` so that older URL does too. `public/CNAME` is
+`thetocque.org`. `public/.nojekyll` disables Jekyll on the upload.

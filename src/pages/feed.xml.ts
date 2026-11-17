@@ -4,11 +4,9 @@ import type { APIContext } from 'astro';
 import { SITE } from '../consts';
 
 /**
- * Archive RSS. Emitted at /feed.xml.
- * Firebase rewrites /feed and /feed/ to this file (see firebase.json).
- * GitHub Pages has no rewrites; the build copies this file to
- * dist/feed/index.xml, which Pages serves at /feed/ as application/xml,
- * and to dist/rss.xml so /rss.xml still returns the feed.
+ * Archive RSS. Emitted at /feed.xml. The build copies it to
+ * dist/feed/index.xml, which GitHub Pages serves at /feed/ as
+ * application/xml, and to dist/rss.xml so /rss.xml still returns the feed.
  */
 export async function GET(context: APIContext) {
   const posts = (await getCollection('blog')).sort(
