@@ -6,12 +6,9 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 /**
- * GitHub Pages cannot apply the firebase.json rewrites. It does serve
- * `feed/index.xml` for `/feed/` with content-type application/xml, which
- * keeps the WordPress-era feed URL. `/rss.xml` is a Firebase 301 to
- * `/feed/`; Pages cannot send that 301, so the same feed is written there
- * and returns 200 instead. firebase.json ignores both copies, plus CNAME
- * and .nojekyll, so the live Firebase upload does not gain them.
+ * Pages serves `feed/index.xml` for `/feed/` as application/xml, which keeps
+ * the WordPress-era feed URL. `/rss.xml` is an older alias of that feed, so
+ * the same document is written there too.
  * @returns {import('astro').AstroIntegration}
  */
 function githubPagesFeedAliases() {
@@ -35,8 +32,8 @@ export default defineConfig({
   trailingSlash: 'always',
   build: {
     // Emit /about/index.html so /about/ and /blog/ stay the live trailing-slash
-    // URLs. Firebase (trailingSlash: true) and GitHub Pages both serve a
-    // directory's index.html at the slash URL. No `base` — the site is the apex.
+    // URLs. GitHub Pages serves a directory's index.html at the slash URL.
+    // No `base` — the site is the apex.
     format: 'directory',
   },
   integrations: [sitemap(), githubPagesFeedAliases()],

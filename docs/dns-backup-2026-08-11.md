@@ -1,8 +1,11 @@
-# thetocque.org DNS — full state before Firebase cutover
+# thetocque.org DNS — full state before the WordPress cutover
+
+Historical snapshot. The site is now served from GitHub Pages. Do not apply
+the Firebase A record or `www` CNAME in the cutover section below.
 
 Captured 2026-08-11 from GoDaddy DNS Management (registrar: GoDaddy, nameservers
-ns13/ns14.domaincontrol.com). Keep this. If anything breaks, this is what the
-zone looked like when the site still served from WordPress.com.
+ns13/ns14.domaincontrol.com). If mail breaks, the MX and SPF records in this
+file are what the zone used when the site still served from WordPress.com.
 
 | Type | Name | Data | TTL |
 |---|---|---|---|
