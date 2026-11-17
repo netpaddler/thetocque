@@ -1,6 +1,8 @@
 # Deploying the site
 
-Two paths exist. Only the first one currently works.
+Firebase Hosting is the live host. GitHub Pages is wired up and waiting for
+the DNS cutover described below. It does not receive thetocque.org traffic
+until GoDaddy changes.
 
 ## 1. From this machine (works today)
 
@@ -23,61 +25,66 @@ Auth comes from `~/.config/configstore/firebase-tools.json`, outside this
 repo. If a deploy ever fails on authentication, re-run
 `npx --package firebase-tools firebase login`.
 
-## 2. From GitHub Actions (built, but dormant)
+## 2. Firebase from GitHub Actions
 
 `.github/workflows/deploy.yml` is a complete pipeline: checkout, `npm ci`,
 `npm run check`, `npm run build`, then deploy via
-`FirebaseExtended/action-hosting-deploy` to the live channel.
+`FirebaseExtended/action-hosting-deploy` to the live channel. It stays in
+place until DNS points at GitHub Pages and the daily rebuild has moved
+with it.
 
-**It has never run.** This repository has no git remote, so there is
-nothing for the workflow to trigger on.
+The repository is `netpaddler/thetocque`. A push to `main` runs this
+workflow.
 
-### What turning it on gets you
+The workflow also runs on a `0 11 * * *` cron because the homepage pulls
+the Substack feed at *build* time (`getSubstackPosts(3)` in
+`src/pages/index.astro`). New Substack posts do not appear on
+thetocque.org until something rebuilds the site.
 
-Push-to-deploy, plus — the more important half — the daily rebuild.
+It needs the secret **`FIREBASE_SERVICE_ACCOUNT_THETOCQUE`** (the name
+`firebase init hosting:github` creates; the CLI suffixes the project id).
+The project id is hardcoded as `thetocque` in the workflow, matching
+`.firebaserc`. `npm run check` is a gate in this pipeline. `dist/` and
+`.astro/` are gitignored.
 
-The workflow runs on a `0 11 * * *` cron because the homepage pulls the
-Substack feed at *build* time (`getSubstackPosts(3)` in
-`src/pages/index.astro`). New Substack posts therefore do not appear on
-thetocque.org until something rebuilds the site. With CI off, that only
-happens when someone deploys by hand from this machine.
+## 3. GitHub Pages (prepared, not live)
 
-### Setup
+`.github/workflows/pages.yml` installs, runs `npm run build`, and deploys
+`dist/` with `actions/configure-pages`, `actions/upload-pages-artifact`,
+and `actions/deploy-pages`. It runs on push to `main` and
+`workflow_dispatch`.
 
-1. Create a GitHub repository (`gh` is not installed here; use the web UI
-   or `brew install gh` first).
-2. Point this repo at it and push `main`:
-   ```
-   git remote add origin <repo-url>
-   git push -u origin main
-   ```
-   The tree has been scanned for credentials and is clean — no `.env`,
-   no keys, no service-account JSON, in the working tree or in history.
-   `dist/` and `.astro/` are gitignored.
-3. Create the service account and install the secret in one step:
-   ```
-   npx --package firebase-tools firebase init hosting:github
-   ```
-   This creates a correctly-scoped service account and writes the secret
-   into the GitHub repo, so no key is ever handled by hand. Decline its
-   offer to create workflow files, or delete them afterward — it writes a
-   `firebase-hosting-merge.yml` that duplicates `deploy.yml`.
+`public/CNAME` is `thetocque.org`. `public/.nojekyll` disables Jekyll on
+the upload. `astro.config.mjs` sets `site: 'https://thetocque.org'` and
+does not set `base`. Pages are directory indexes (`/about/index.html`,
+`/blog/index.html`), which is how both hosts serve the trailing-slash URLs.
+`404.html` is the custom not-found page. `sitemap-index.xml` and the
+canonical tags are unchanged.
 
-   The secret it creates is named **`FIREBASE_SERVICE_ACCOUNT_THETOCQUE`**
-   — the CLI suffixes the project id. `deploy.yml` references that exact
-   name. If the secret is ever regenerated under a different name, the
-   workflow must be updated to match, or deploys fail on an empty
-   credential.
+Pages cannot apply `firebase.json` rewrites, redirects, or response
+headers. The build copies `feed.xml` to `feed/index.xml` so `/feed/` still
+returns the RSS document (`application/xml` on Pages), and to `rss.xml` so
+that path returns the feed instead of the Firebase 301. `firebase.json`
+ignores `.nojekyll`, `CNAME`, `rss.xml`, and `feed/index.xml` so a Firebase
+deploy of the same `dist/` does not publish them.
 
-   The project id is *not* configured here — it is hardcoded as
-   `thetocque` in the workflow, matching `.firebaserc`. It is not a
-   secret, and reading it from a repo variable meant an unset variable
-   resolved to an empty string and failed obscurely.
-5. Trigger a run from the Actions tab (`workflow_dispatch`) to confirm
-   before relying on the cron.
+There is no daily cron on the Pages workflow. `deploy.yml` still rebuilds
+at 11:00 UTC because the homepage reads Substack at build time. After
+cutover, add that schedule to `pages.yml` or the homepage "Latest" section
+stays stale until the next push.
 
-`npm run check` is a gate in the pipeline. It currently passes clean —
-0 errors across 22 files.
+### Manual steps before thetocque.org is served from Pages
+
+1. In the repo, Settings → Pages → Build and deployment → Source: **GitHub Actions**.
+2. Merge the Pages workflow to `main` and let the first run finish.
+3. At GoDaddy, change only the apex A records to `185.199.108.153`,
+   `185.199.109.153`, `185.199.110.153`, and `185.199.111.153`, and the
+   `www` CNAME to `netpaddler.github.io`. Leave every MX record, both SPF
+   TXT records, and the `google-site-verification` TXT record alone.
+4. In Pages, set the custom domain to `thetocque.org` and turn on Enforce HTTPS.
+
+Do not remove `.firebaserc`, `firebase.json`, `.firebase`, or
+`deploy.yml` until that cutover has been stable.
 
 ## Publishing an essay
 
