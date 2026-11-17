@@ -4,7 +4,11 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      ".nojekyll",
+      "CNAME",
+      "rss.xml",
+      "feed/index.xml"
     ],
     "cleanUrls": false,
     "trailingSlash": true,

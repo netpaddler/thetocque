@@ -35,10 +35,17 @@ subscribe CTAs are hidden.
 
 ## Deploying
 
+Firebase Hosting is still the live host. The build output is `dist/`.
+
 ```
 npm run build
 npx firebase-tools deploy --only hosting
 ```
 
+GitHub Pages is prepared in `.github/workflows/pages.yml` and does not receive
+traffic until DNS changes. See `docs/deploy.md`.
+
 `firebase.json` sets long cache lifetimes for hashed `/_astro/` assets, no-cache for HTML,
 security headers, and a rewrite so `/feed/` serves the RSS feed at its WordPress-era path.
+Pages cannot set those headers or that rewrite; the build copies the feed to
+`feed/index.xml` so `/feed/` still returns the RSS document there.
