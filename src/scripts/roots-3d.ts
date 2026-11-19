@@ -101,7 +101,9 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
   canvas.setAttribute('role', 'img');
   canvas.setAttribute(
     'aria-label',
-    `3D map of ${data.nodes.length - 1} sources arranged in clusters around the U.S. Constitution`,
+    `3D map of the U.S. Constitution, its ${data.nodes.filter((n) => n.cat === 'constitution').length} parts, and ${
+      data.nodes.filter((n) => n.cat !== 'center' && n.cat !== 'constitution').length
+    } sources arranged in clusters around it`,
   );
   canvas.setAttribute('aria-describedby', 'r3d-note');
 
@@ -194,6 +196,15 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
   }
   scene.add(heart);
 
+  // The orbit the Constitution's parts ride on.
+  const PART_R = 0.23;
+  const goldLine = gold.clone().lerp(navy, 0.12);
+  if (space.ring > 0) {
+    const pts: P3[] = [];
+    for (let i = 0; i <= 120; i++) pts.push(onRing(space.ring, (i / 120) * Math.PI * 2, 0));
+    scene.add(makeLine(pts, lineMaterial({ color: goldLine, linewidth: 1.4 })));
+  }
+
   /** A soft round glow, drawn once and shared. */
   const glowTexture = (() => {
     const c = document.createElement('canvas');
@@ -228,7 +239,8 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
   for (const n of data.nodes) {
     if (n.cat === 'center') continue;
     const at = vec(space.nodes.get(n.id)!);
-    const r = compactCats.has(n.cat) ? 0.2 : 0.3;
+    const isPart = n.cat === 'constitution';
+    const r = isPart ? PART_R : compactCats.has(n.cat) ? 0.2 : 0.3;
     const base = catColor(n.cat);
     const material = keep(new MeshStandardMaterial({ color: base, roughness: 0.48, metalness: 0.05 }));
     const mesh = new Mesh(sphere, material);
@@ -236,6 +248,8 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
     mesh.scale.setScalar(r);
     scene.add(mesh);
     nodeMeshes.set(n.id, { mesh, material, base, r, at });
+    // A part needs no stem. Its spoke to the Constitution places it.
+    if (isPart) continue;
 
     // A fine stem drops from each source to its cluster's arc, which is what
     // lets the eye place it in depth.
@@ -259,6 +273,17 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
   const edges = data.edges.map((edge) => {
     const a = space.nodes.get(edge.from)!;
     const b = space.nodes.get(edge.to)!;
+    if (edge.kind === 'part') {
+      // A spoke from the part to the Constitution: structure, drawn fine and gold.
+      const from = vec(a);
+      const to = vec(b);
+      const dir = to.clone().sub(from).normalize();
+      const pts = [from.clone().addScaledVector(dir, PART_R + 0.08), to.clone().addScaledVector(dir, -(CENTER_R + 0.1))];
+      const material = lineMaterial({ color: goldLine, linewidth: 1 });
+      const line = makeLine(pts, material);
+      scene.add(line);
+      return { edge, line, material, width: 1, arrow: null, arrowMaterial: null, pts };
+    }
     const raw = edgePath(a, b).map(vec);
     // Stop short of each end so the line meets the surface, not the middle.
     const clear = (id: string) => (id === centerNode.id ? CENTER_R + 0.16 : (nodeMeshes.get(id)?.r ?? 0.3) + 0.1);
@@ -318,6 +343,7 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
     const el = div('r3d-label', n.short);
     el.dataset.node = n.id;
     if (compactCats.has(n.cat)) el.classList.add('r3d-label--short');
+    if (n.cat === 'constitution') el.classList.add('r3d-label--part');
     nodeLabels.set(n.id, addLabel(el, m.at, n.id, m.r));
   }
   centerEl.dataset.node = centerNode.id;
@@ -455,6 +481,13 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
     placeGlow(pickGlow, pickedId);
 
     edges.forEach((e, i) => {
+      if (e.edge.kind === 'part') {
+        const on = next.onEdges.has(i);
+        e.material.color.copy(on || active === null ? goldLine : tmp.copy(goldLine).lerp(paper, 0.6));
+        e.material.linewidth = (on ? 2 : 1) * lineScale;
+        e.line.renderOrder = on ? 2 : 0;
+        return;
+      }
       const hidden = next.hiddenKinds.has(e.edge.kind);
       e.line.visible = !hidden;
       if (e.arrow) e.arrow.visible = !hidden;
@@ -512,7 +545,7 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
 
     let line: { index: number; d: number } | null = null;
     edges.forEach((e, index) => {
-      if (!e.line.visible) return;
+      if (!e.line.visible || e.edge.kind === 'part') return;
       for (let i = 0; i < e.pts.length; i += 2) {
         const p = project(e.pts[i]!);
         if (!p.visible) continue;
@@ -587,6 +620,22 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
   const clash = (a: Label['rect'], b: Label['rect']) =>
     a.x < b.x + b.w + 3 && a.x + a.w + 3 > b.x && a.y < b.y + b.h + 1 && a.y + a.h + 1 > b.y;
 
+  const partIds = new Set(data.nodes.filter((n) => n.cat === 'constitution').map((n) => n.id));
+  const frontOfRing = new Vector3();
+  /** A part's label goes on the side facing away from the Constitution, so the ring stays open. */
+  const partSpots = (p: { x: number; y: number }, l: Label, drop: number, coreX: number, coreY: number) => {
+    const below = { x: p.x - l.w / 2, y: p.y + drop };
+    const above = { x: p.x - l.w / 2, y: p.y - drop - l.h };
+    const right = { x: p.x + drop + 2, y: p.y - l.h / 2 };
+    const left = { x: p.x - drop - 2 - l.w, y: p.y - l.h / 2 };
+    const side = p.x >= coreX ? [right, left] : [left, right];
+    const upright = p.y >= coreY ? [below, above] : [above, below];
+    // Near the left or right end of the ring the label reads best beside the dot.
+    return Math.abs(p.x - coreX) > Math.abs(p.y - coreY) * 2.2
+      ? [side[0]!, upright[0]!, upright[1]!, side[1]!]
+      : [upright[0]!, side[0]!, side[1]!, upright[1]!];
+  };
+
   function placeLabels() {
     const camDist = camera.position.length();
     const near = Math.max(1, camDist - space.reach);
@@ -606,9 +655,11 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
                 ? 2
                 : isNode && active && view.onNodes.has(l.id!)
                   ? 3
-                  : isNode
-                    ? 5
-                    : 4;
+                  : isNode && partIds.has(l.id!)
+                    ? 3.5
+                    : isNode
+                      ? 5
+                      : 4;
         return { l, depth, rank };
       })
       .sort((a, b) => a.rank - b.rank || a.depth - b.depth);
@@ -621,15 +672,29 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
       const r = l.r * pxPerUnit(l.at) + 1;
       placed.push({ x: p.x - r, y: p.y - r, w: r * 2, h: r * 2 });
     }
+    // The Constitution's own label hangs under the ring of its parts, so it
+    // never covers the part that happens to be nearest the reader.
+    const core = project(centerLabel.at);
+    const coreX = core.x;
+    const coreY = core.y;
+    let underRing = 0;
+    if (space.ring > 0) {
+      const out = Math.hypot(camera.position.x, camera.position.z) || 1;
+      frontOfRing.set((camera.position.x / out) * space.ring, 0, (camera.position.z / out) * space.ring);
+      underRing = project(frontOfRing).y + PART_R * pxPerUnit(frontOfRing) + 7;
+    }
     for (const { l, depth, rank } of order) {
       const p = project(l.at);
       const drop = l.id === null ? 5 : l.r * pxPerUnit(l.at) + 5;
+      const isPart = l.id !== null && partIds.has(l.id);
       // Labels are placed most important first. Each one tries under its dot,
       // then above, then either side. If every spot is taken it steps aside
       // until the view turns, so labels never collide.
       const spots =
         l === centerLabel
-          ? [{ x: p.x - l.w / 2, y: p.y + drop }]
+          ? [{ x: p.x - l.w / 2, y: Math.max(p.y + drop, underRing) }]
+          : isPart
+            ? partSpots(p, l, drop, coreX, coreY)
           : l.id === null
             ? [
                 { x: p.x - l.w / 2, y: p.y + 5 },
@@ -645,7 +710,7 @@ export function mount(host: HTMLElement, api: RootsApi): Roots3D {
             ];
       // The spot used last time is tried first, so a label does not hop
       // about as the view turns or jump out from under the pointer.
-      const last = Math.min(l.spot, spots.length - 1);
+      const last = isPart ? 0 : Math.min(l.spot, spots.length - 1);
       let rect = { ...spots[last]!, w: l.w, h: l.h };
       let fits = false;
       if (p.visible) {

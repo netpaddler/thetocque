@@ -35,7 +35,12 @@ export interface SpaceLayout {
   clusters: SpaceCluster[];
   /** Radius of the widest ring. */
   reach: number;
+  /** Radius of the small ring the Constitution's parts sit on. 0 when there are none. */
+  ring: number;
 }
+
+/** The parts of the Constitution circle it this far out, well inside the nearest cluster. */
+const PART_RING = 3.9;
 
 /** Outermost first. Clusters past the end share the last ring. */
 const RINGS = [
@@ -126,7 +131,35 @@ export function layoutSpace(data: RootsClientData): SpaceLayout {
   const center = data.nodes.find((n) => n.cat === 'center');
   if (center) nodes.set(center.id, { x: 0, y: 0, z: 0 });
 
-  return { nodes, clusters, reach: RINGS[0]!.radius };
+  // The parts of the Constitution keep their document order around a small
+  // level ring. The ring is turned (and run one way or the other) so that each
+  // part faces the sources tied to it as nearly as it can, which keeps their
+  // lines short.
+  const parts = data.nodes.filter((n) => n.cat === 'constitution');
+  if (parts.length > 0) {
+    const step = (Math.PI * 2) / parts.length;
+    const pulls = parts.map((part) =>
+      data.edges
+        .filter((e) => e.kind !== 'part' && (e.from === part.id || e.to === part.id))
+        .map((e) => nodes.get(e.from === part.id ? e.to : e.from))
+        .filter((at): at is P3 => at !== undefined && Math.hypot(at.x, at.z) > 0.01)
+        .map((at) => Math.atan2(at.x, at.z)),
+    );
+    let best = { cost: Infinity, start: 0, dir: 1 };
+    for (const dir of [1, -1]) {
+      for (let k = 0; k < 360; k += 2) {
+        const start = (k * Math.PI) / 180;
+        let cost = 0;
+        pulls.forEach((list, i) => {
+          for (const pull of list) cost += 1 - Math.cos(start + dir * i * step - pull);
+        });
+        if (cost < best.cost - 1e-9) best = { cost, start, dir };
+      }
+    }
+    parts.forEach((part, i) => nodes.set(part.id, onRing(PART_RING, best.start + best.dir * i * step, 0)));
+  }
+
+  return { nodes, clusters, reach: RINGS[0]!.radius, ring: parts.length > 0 ? PART_RING : 0 };
 }
 
 /**

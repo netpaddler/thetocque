@@ -5,7 +5,7 @@ import RootsConnection from '../../components/RootsConnection.astro';
 import { NODES } from '../../data/roots';
 import {
   CATEGORIES,
-  KINDS,
+  FILTER_KINDS,
   ROOTS_NOTE,
   clientData,
   incoming,
@@ -14,6 +14,7 @@ import {
   nodeById,
   nodesIn,
   outgoing,
+  partsInOrder,
   pathOf,
   slugOf,
   typeset,
@@ -27,7 +28,8 @@ const title = 'Roots of the Constitution';
 const description =
   typeset("An interactive map of the sources behind the U.S. Constitution: Magna Carta, Locke, Montesquieu, the state constitutions, the Federalist, the Anti-Federalists, and the founders' letters, each linked to the original text.");
 
-const sourceCount = NODES.filter((n) => n.cat !== 'center').length;
+const partCount = partsInOrder().length;
+const sourceCount = NODES.length - partCount - 1;
 const wide = layoutWide();
 const tall = layoutTall();
 // "<" is escaped so no text in the data can close the script tag early.
@@ -69,10 +71,13 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
           Enlightenment thinkers, their own state constitutions, and the hard lessons of the
           Articles of Confederation. Then the country argued about the result in newspapers and
           private letters. This map shows {sourceCount} of those sources and how each one connects
-          to the Constitution.
+          to the Constitution, or to the part of it that the source shaped, explains, or disputes.
         </p>
         <p>
-          Select any source to see what it is, who wrote it, and how it ties to the others. A
+          The Constitution sits in the middle with its parts around it: the Preamble, the
+          articles, the Bill of Rights, and the later amendments. Select a part to see every
+          source tied to it. Select any source to see what it is, who wrote it, and how it ties
+          to the others. A
           solid line means one source shaped another. A dotted line means it explains the other.
           A dashed line marks a dispute. Use the buttons to show or hide each kind of line, or{' '}
           <a href="#all-sources">skip to the full list</a> below the map.
@@ -114,7 +119,7 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
 
         <div class="filter" role="group" aria-label="Show or hide kinds of connection" data-filter hidden>
           {
-            KINDS.map((k) => (
+            FILTER_KINDS.map((k) => (
               <button type="button" class="chip" data-kind={k.id} aria-pressed="true">
                 <svg class="stroke" data-kind={k.id} viewBox="0 0 30 10" aria-hidden="true">
                   <line x1="1" y1="5" x2="29" y2="5" />
@@ -128,7 +133,7 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
         {/* Without JavaScript the buttons cannot filter, so the same three line styles show as a plain key. */}
         <ul class="legend legend--lines" aria-label="Kinds of connection" data-key>
           {
-            KINDS.map((k) => (
+            FILTER_KINDS.map((k) => (
               <li>
                 <svg class="stroke" data-kind={k.id} viewBox="0 0 30 10" aria-hidden="true">
                   <line x1="1" y1="5" x2="29" y2="5" />
@@ -191,8 +196,8 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
       <header class="list__head">
         <h2 id="list-heading">All sources and connections</h2>
         <p>
-          The same {NODES.length} documents and {clientData().edges.length} connections as the map, in
-          plain text. Each source has its own page.
+          The Constitution, its {partCount} parts, and the same {sourceCount} sources as the map,
+          with every connection in plain text. Each one has its own page.
         </p>
       </header>
 
