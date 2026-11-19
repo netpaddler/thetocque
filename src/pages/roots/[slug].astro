@@ -7,7 +7,10 @@ import {
   ROOTS_NOTE,
   categoryOf,
   incoming,
+  isPart,
+  nodeById,
   outgoing,
+  pathOf,
   slugOf,
   typeset,
   validateRoots,
@@ -25,21 +28,49 @@ interface Props {
 
 const { node } = Astro.props;
 const category = categoryOf(node.cat);
-const from = outgoing(node.id);
-const to = incoming(node.id);
 const isCenter = node.cat === 'center';
+const isPartNode = node.cat === 'constitution';
+// The lines that tie a part to the whole are structure. They get their own
+// place on the page, apart from the sources.
+const from = outgoing(node.id).filter((e) => !isPart(e));
+const to = incoming(node.id).filter((e) => !isPart(e));
+const parts = isCenter ? incoming(node.id).filter(isPart) : [];
+const whole = isPartNode ? outgoing(node.id).find(isPart) : undefined;
+const sourceCount = (id: string) => incoming(id).filter((e) => !isPart(e)).length + outgoing(id).filter((e) => !isPart(e)).length;
+const countText = (n: number) => (n === 0 ? 'No sources yet' : `${n} ${n === 1 ? 'source' : 'sources'}`);
 
-const title = isCenter ? `${node.full}: its roots` : `${node.full} and the Constitution`;
+const title = isCenter
+  ? `${node.full}: its roots`
+  : isPartNode
+    ? `${node.label} of the Constitution: its sources`
+    : `${node.full} and the Constitution`;
 const description = typeset(
   isCenter
-    ? `${node.about} See the ${to.length} sources that shaped it, explain it, or dispute it, each linked to the original text.`
-    : `${node.full} (${node.year}), ${node.author}. ${node.about} See how it connects to the U.S. Constitution, with links to the original text.`,
+    ? `${node.about} See its ${parts.length} parts and the sources that shaped it, explain it, or dispute it, each linked to the original text.`
+    : isPartNode
+      ? `${node.full}. ${node.about} See the sources that shaped it, explain it, or dispute it, each linked to the original text.`
+      : `${node.full} (${node.year}), ${node.author}. ${node.about} See how it connects to the U.S. Constitution, with links to the original text.`,
 );
+const toHeading = isCenter
+  ? 'What connects to the whole document'
+  : isPartNode
+    ? 'What shaped it, explains it, or disputes it'
+    : 'What connects to it';
 ---
 
 <BaseLayout title={typeset(title)} description={description}>
   <article class="roots wrap page">
-    <p class="back"><a href="/roots/"><span aria-hidden="true">&larr; </span>Back to the map</a></p>
+    <p class="back">
+      <a href="/roots/"><span aria-hidden="true">&larr; </span>Back to the map</a>
+      {
+        whole && (
+          <>
+            <span class="back__sep" aria-hidden="true">/</span>
+            <a href={pathOf(nodeById(whole.to))}>{typeset(nodeById(whole.to).full)}</a>
+          </>
+        )
+      }
+    </p>
 
     <header class="head">
       <p class="cat" data-cat={node.cat}>
@@ -49,6 +80,7 @@ const description = typeset(
       <h1>{typeset(node.full)}</h1>
       <p class="meta">{typeset(node.author)} · {node.year}</p>
       <p class="lede">{typeset(node.about)}</p>
+      {whole && <p class="whole">{typeset(whole.detail)}</p>}
       <p class="actions">
         <a class="btn" href={node.href} target="_blank" rel="noopener">
           <span class="ext">Read it at {typeset(node.site)}</span>
@@ -56,6 +88,33 @@ const description = typeset(
         </a>
       </p>
     </header>
+
+    {
+      parts.length > 0 && (
+        <section class="block" aria-labelledby="parts-heading">
+          <h2 id="parts-heading">Its parts</h2>
+          <p class="block__intro">
+            Most sources bear on one part of the Constitution more than the rest. Open a part to
+            see what shaped it, explains it, or disputes it.
+          </p>
+          <ul class="parts">
+            {parts.map((edge) => {
+              const part = nodeById(edge.from);
+              return (
+                <li class="part" data-cat={part.cat}>
+                  <a class="part__name" href={pathOf(part)}>
+                    <span class="dot" />
+                    {typeset(part.label)}
+                  </a>
+                  <span class="part__what">{typeset(edge.label)}</span>
+                  <span class="part__count">{countText(sourceCount(part.id))}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )
+    }
 
     {
       from.length > 0 && (
@@ -71,10 +130,23 @@ const description = typeset(
     {
       to.length > 0 && (
         <section class="block" aria-labelledby="to-heading">
-          <h2 id="to-heading">What connects to it</h2>
+          <h2 id="to-heading">{toHeading}</h2>
           <ul class="conns">
             {to.map((edge) => <RootsConnection edge={edge} self={node.id} />)}
           </ul>
+        </section>
+      )
+    }
+
+    {
+      isPartNode && from.length + to.length === 0 && (
+        <section class="block" aria-labelledby="none-heading">
+          <h2 id="none-heading">{toHeading}</h2>
+          <p class="block__intro">
+            No source on the map is tied to this part alone yet. The sources that bear on the
+            whole document are on the page for the{' '}
+            <a href={pathOf(nodeById(whole!.to))}>{typeset(nodeById(whole!.to).full)}</a>.
+          </p>
         </section>
       )
     }
@@ -104,6 +176,63 @@ const description = typeset(
   }
   .back--end {
     margin: clamp(2rem, 5vw, 3rem) 0 0;
+  }
+  .back__sep {
+    margin-inline: 0.6rem;
+    color: var(--ink-muted);
+    font-weight: 400;
+  }
+
+  .whole {
+    margin: 0.9rem 0 0;
+  }
+
+  .block__intro {
+    margin: 0 0 1rem;
+    color: var(--ink-muted);
+  }
+
+  .parts {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .part {
+    display: grid;
+    grid-template-columns: minmax(9.5rem, auto) 1fr auto;
+    align-items: baseline;
+    gap: 0.2rem 1.25rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--rule);
+  }
+  .part__name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .part__name:hover {
+    text-decoration: underline;
+  }
+  .part__what {
+    color: var(--ink);
+  }
+  .part__count {
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+    white-space: nowrap;
+  }
+  @media (max-width: 599px) {
+    .part {
+      grid-template-columns: 1fr auto;
+    }
+    .part__what {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      font-size: 0.95rem;
+    }
   }
 
   .head {

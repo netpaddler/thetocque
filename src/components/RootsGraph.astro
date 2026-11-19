@@ -1,6 +1,5 @@
 ---
-import { EDGES } from '../data/roots';
-import { categoryOf, pathOf, typeset } from '../lib/roots';
+import { categoryOf, pathOf, sourcesOf, typeset } from '../lib/roots';
 import type { RootsLayout } from '../lib/roots';
 
 interface Props {
@@ -10,9 +9,8 @@ interface Props {
 const { layout } = Astro.props;
 const { center } = layout;
 
-const degree = (id: string) => EDGES.filter((e) => e.from === id || e.to === id).length;
 const describe = (id: string) => {
-  const n = degree(id);
+  const n = sourcesOf(id);
   return `${n} ${n === 1 ? 'connection' : 'connections'}`;
 };
 ---
@@ -22,7 +20,7 @@ const describe = (id: string) => {
   viewBox={`0 0 ${layout.w} ${layout.h}`}
   role="group"
   aria-label="Map of the sources connected to the U.S. Constitution"
-  style={`--fs:${layout.fontSize}px;--hs:${layout.headSize}px`}
+  style={`--fs:${layout.fontSize}px;--hs:${layout.headSize}px;--ps:${layout.partSize}px`}
 >
   {/* Lines are a visual aid. The same connections are in each source's panel and in the list below. */}
   <g class="rg-edges" aria-hidden="true">
@@ -35,10 +33,10 @@ const describe = (id: string) => {
           data-from={e.edge.from}
           data-to={e.edge.to}
         >
-          <path class="rg-edge__hit" d={e.d} />
+          {e.edge.kind !== 'part' && <path class="rg-edge__hit" d={e.d} />}
           <path class="rg-edge__line" d={e.d} />
           {e.arrow && <path class="rg-edge__arrow" d={e.arrow} />}
-          <title>{typeset(e.edge.label)}</title>
+          {e.edge.kind !== 'part' && <title>{typeset(e.edge.label)}</title>}
         </g>
       ))
     }
@@ -67,9 +65,11 @@ const describe = (id: string) => {
     {
       layout.nodes.map((p) => {
         const isCenter = p.node.cat === 'center';
+        const isPart = p.node.cat === 'constitution';
+        const lineHeight = isPart ? layout.partLine : layout.lineHeight;
         return (
           <a
-            class:list={['rg-node', { 'rg-node--center': isCenter }]}
+            class:list={['rg-node', { 'rg-node--center': isCenter, 'rg-node--part': isPart }]}
             href={pathOf(p.node)}
             data-node={p.node.id}
             data-cat={p.node.cat}
@@ -94,7 +94,7 @@ const describe = (id: string) => {
                 <circle class="rg-node__dot" cx={p.x} cy={p.y} r={p.r} />
                 <text class="rg-node__label" x={p.lx} y={p.ly} text-anchor={p.anchor}>
                   {p.lines.map((line, i) => (
-                    <tspan x={p.lx} dy={i === 0 ? 0 : layout.lineHeight}>
+                    <tspan x={p.lx} dy={i === 0 ? 0 : lineHeight}>
                       {line}
                     </tspan>
                   ))}
@@ -177,6 +177,25 @@ const describe = (id: string) => {
   }
   .rg-edge.is-filtered {
     display: none;
+  }
+
+  /* The spokes that tie each part to the Constitution: structure, kept quiet. */
+  .rg-edge[data-kind='part'] {
+    pointer-events: none;
+  }
+  .rg-edge[data-kind='part'] .rg-edge__line,
+  .rg-edge[data-kind='part']:hover .rg-edge__line {
+    stroke: var(--r-gold);
+    stroke-width: 1;
+    opacity: 0.75;
+  }
+  .rg-edge[data-kind='part'].is-on .rg-edge__line {
+    stroke: var(--r-gold);
+    stroke-width: 1.75;
+    opacity: 1;
+  }
+  .rg--tall .rg-edge[data-kind='part'] .rg-edge__line {
+    opacity: 0.75;
   }
 
   /* On a phone the lines cross the labels, so they rest fainter until a
@@ -269,6 +288,19 @@ const describe = (id: string) => {
     fill: var(--purple-dark);
   }
 
+  /* The parts of the Constitution: the medallion's navy, rimmed in its gold. */
+  .rg-node--part .rg-node__dot {
+    stroke: var(--r-gold);
+    stroke-width: 1.75;
+  }
+  .rg-node--part .rg-node__label {
+    font-size: var(--ps);
+  }
+  .rg-node--part.is-picked .rg-node__dot {
+    stroke: var(--r-gold);
+    stroke-width: 3;
+  }
+
   .rg-node__plate {
     fill: var(--r-center);
   }
@@ -299,6 +331,9 @@ const describe = (id: string) => {
   }
   .rg.has-active .rg-edge:not(.is-on) {
     opacity: 0.12;
+  }
+  .rg.has-active .rg-edge[data-kind='part']:not(.is-on) {
+    opacity: 0.4;
   }
   .rg.has-active .rg-head {
     opacity: 0.45;

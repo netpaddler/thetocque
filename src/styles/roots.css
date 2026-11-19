@@ -8,6 +8,7 @@
   --r-line: #6a7286;
   --r-center: #232d3f;
   --r-gold: #c9a24a;
+  --r-constitution: #232d3f;
   --r-roots: #a67c14;
   --r-founding: #2a5a9c;
   --r-federalist: #8a2fd0;
@@ -17,6 +18,9 @@
 
 .roots [data-cat='center'] {
   --cat: var(--r-center);
+}
+.roots [data-cat='constitution'] {
+  --cat: var(--r-constitution);
 }
 .roots [data-cat='roots'] {
   --cat: var(--r-roots);
@@ -60,6 +64,14 @@
 .roots .dot[data-cat='center'] {
   box-shadow: 0 0 0 2px var(--r-gold);
 }
+/* A part of the Constitution: the same navy, with a finer gold rim. */
+.roots [data-cat='constitution'] > .dot,
+.roots .dot[data-cat='constitution'] {
+  width: 0.56em;
+  height: 0.56em;
+  margin-inline: 0.07em;
+  box-shadow: 0 0 0 1.5px var(--r-gold);
+}
 
 /* The three line styles, drawn the same way everywhere they appear. */
 .roots .stroke {
@@ -75,6 +87,10 @@
 }
 .roots .stroke[data-kind='explains'] line {
   stroke-dasharray: 0.1 5;
+}
+.roots .stroke[data-kind='part'] line {
+  stroke: var(--r-gold);
+  stroke-width: 1.5;
 }
 .roots .stroke[data-kind='dispute'] line {
   stroke-dasharray: 6 5;
@@ -483,6 +499,11 @@
 }
 .roots .r3d-label--short {
   font-size: 0.72rem;
+}
+.roots .r3d-label--part {
+  max-width: none;
+  white-space: nowrap;
+  font-size: 0.75rem;
 }
 .roots .r3d-label.is-off,
 .roots .r3d-cluster.is-off {

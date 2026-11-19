@@ -12,6 +12,7 @@ export const ROOTS_NOTE =
 /** Display order runs oldest to newest, which is also the order around the map. */
 export const CATEGORIES: { id: Cat; name: string; short: string }[] = [
   { id: 'center', name: 'The Constitution', short: 'The Constitution' },
+  { id: 'constitution', name: 'Parts of the Constitution', short: 'Parts of the Constitution' },
   { id: 'roots', name: 'English and Enlightenment roots', short: 'English and Enlightenment roots' },
   { id: 'founding', name: 'American founding documents', short: 'American founding documents' },
   { id: 'federalist', name: 'The Federalist', short: 'The Federalist' },
@@ -19,15 +20,20 @@ export const CATEGORIES: { id: Cat; name: string; short: string }[] = [
   { id: 'letters', name: "Founders' letters and writings", short: "Founders' letters" },
 ];
 
-/** The clusters around the Constitution, in display order. */
-export const CLUSTERS = CATEGORIES.filter((c) => c.id !== 'center');
+/** The outer clusters of sources, in display order. The Constitution and its parts sit inside them. */
+export const CLUSTERS = CATEGORIES.filter((c) => c.id !== 'center' && c.id !== 'constitution');
 
 export const KINDS: { id: Kind; name: string; out: string; in: string }[] = [
   { id: 'influence', name: 'Shaped it', out: 'Shaped', in: 'Shaped by' },
   { id: 'explains', name: 'Explains it', out: 'Explains', in: 'Explained by' },
   // A dispute runs both ways, so both ends read the same.
   { id: 'dispute', name: 'Disputes it', out: 'In dispute with', in: 'In dispute with' },
+  // Structure, not argument: a part belongs to the whole. Always shown, never a filter.
+  { id: 'part', name: 'Part of it', out: 'Part of', in: 'Includes' },
 ];
+
+/** The kinds of line a reader can show or hide. */
+export const FILTER_KINDS = KINDS.filter((k) => k.id !== 'part');
 
 export const categoryOf = (cat: Cat) => CATEGORIES.find((c) => c.id === cat)!;
 export const kindOf = (kind: Kind) => KINDS.find((k) => k.id === kind)!;
@@ -64,6 +70,18 @@ export function validateRoots() {
   if (NODES.filter((n) => n.cat === 'center').length !== 1) {
     throw new Error('roots data: exactly one node must have cat "center"');
   }
+  const center = NODES.find((n) => n.cat === 'center')!.id;
+  for (const e of EDGES) {
+    if (e.kind !== 'part') continue;
+    if (nodeById(e.from).cat !== 'constitution' || e.to !== center) {
+      throw new Error(`roots data: a "part" edge must run from a part to "${center}" (${e.from} to ${e.to})`);
+    }
+  }
+  for (const n of partsInOrder()) {
+    if (EDGES.filter((e) => e.kind === 'part' && e.from === n.id).length !== 1) {
+      throw new Error(`roots data: part "${n.id}" needs exactly one "part" edge to "${center}"`);
+    }
+  }
 }
 
 /**
@@ -84,7 +102,16 @@ const yearOf = (n: RootNode) => Number.parseInt(n.year, 10) || 0;
 export const byAge = (a: RootNode, b: RootNode) =>
   yearOf(a) - yearOf(b) || a.label.localeCompare(b.label, 'en', { numeric: true });
 
-export const nodesIn = (cat: Cat) => NODES.filter((n) => n.cat === cat).sort(byAge);
+/** The parts of the Constitution, in the order the document has them. */
+export const partsInOrder = () => NODES.filter((n) => n.cat === 'constitution');
+
+export const nodesIn = (cat: Cat) =>
+  cat === 'constitution' ? partsInOrder() : NODES.filter((n) => n.cat === cat).sort(byAge);
+
+/** True for the lines that tie a part to the whole. */
+export const isPart = (e: RootEdge) => e.kind === 'part';
+/** How many sources shape, explain, or dispute this node (structure lines left out). */
+export const sourcesOf = (id: string) => EDGES.filter((e) => !isPart(e) && (e.from === id || e.to === id)).length;
 
 /**
  * A cluster with more sources than this is drawn compactly, several to a row,
@@ -204,6 +231,9 @@ export interface RootsLayout {
   lineHeight: number;
   headSize: number;
   center: { x: number; y: number; rx: number; ry: number };
+  /** Type sizes for the labels of the Constitution's parts. */
+  partSize: number;
+  partLine: number;
   nodes: PlacedNode[];
   heads: PlacedHead[];
   arcs: PlacedArc[];
@@ -236,15 +266,25 @@ const sideCats = (): { left: Cat[]; right: Cat[] } => {
   return { left: ['roots', 'founding'], right: ['federalist', 'antifederalist', 'letters'] };
 };
 
+interface Blob {
+  x: number;
+  y: number;
+  rx: number;
+  ry: number;
+}
+
 function routeEdges(
   placed: Map<string, PlacedNode>,
   center: RootsLayout['center'],
-  /** One point bends the line as a simple arc. Two points steer it as an S curve, already clear of the medallion. */
+  /** The ring of parts with its labels. Lines between outside sources stay clear of all of it. */
+  ring: { rx: number; ry: number },
+  /** One point bends the line as a simple arc. Two points steer it as an S curve, already clear of the middle. */
   control: (a: Pt, b: Pt, index: number) => Pt | [Pt, Pt],
 ): PlacedEdge[] {
   const GAP = 4;
   const ARROW = 7;
   const centerId = NODES.find((n) => n.cat === 'center')!.id;
+  const partIds = partsInOrder().map((n) => n.id);
 
   /** Distance from a node's middle to its outline, heading along unit vector u. */
   const reach = (id: string, u: Pt) => {
@@ -261,22 +301,100 @@ function routeEdges(
     x: (1 - t) ** 2 * a.x + 2 * (1 - t) * t * c.x + t ** 2 * b.x,
     y: (1 - t) ** 2 * a.y + 2 * (1 - t) * t * c.y + t ** 2 * b.y,
   });
-  /** True when the arc runs through the medallion (with breathing room). */
-  const hitsCenter = (a: Pt, c: Pt, b: Pt) => {
-    for (let i = 1; i < 24; i++) {
-      const p = at(a, c, b, i / 24);
-      const nx = (p.x - center.x) / (center.rx + 22);
-      const ny = (p.y - center.y) / (center.ry + 20);
-      if (nx * nx + ny * ny < 1) return true;
+
+  const zone: Blob = { x: center.x, y: center.y, rx: ring.rx, ry: ring.ry };
+  const medallion: Blob = { x: center.x, y: center.y, rx: center.rx + 12, ry: center.ry + 12 };
+  const partBlob = (id: string): Blob => {
+    const p = placed.get(id)!;
+    return { x: p.x, y: p.y, rx: p.r + 12, ry: p.r + 12 };
+  };
+  /** The label of a part, as a box a passing line should not run through. */
+  const labelBox = (id: string) => {
+    const p = placed.get(id)!;
+    const below = p.ly > p.y;
+    const h = p.hit.h - p.r * 2 - 12;
+    const top = below ? p.y + p.r + 4 : p.y - p.r - 6 - h;
+    return { x0: p.hit.x, x1: p.hit.x + p.hit.w, y0: top - 2, y1: top + h + 2 };
+  };
+  type Box = ReturnType<typeof labelBox>;
+  /** True when the arc stays out of every blob and box. */
+  const clear = (a: Pt, c: Pt, b: Pt, blobs: Blob[], boxes: Box[]) => {
+    for (let i = 1; i < 96; i++) {
+      const p = at(a, c, b, i / 96);
+      for (const blob of blobs) {
+        if (((p.x - blob.x) / blob.rx) ** 2 + ((p.y - blob.y) / blob.ry) ** 2 < 1) return false;
+      }
+      for (const box of boxes) {
+        if (p.x > box.x0 && p.x < box.x1 && p.y > box.y0 && p.y < box.y1) return false;
+      }
     }
-    return false;
+    return true;
+  };
+  /**
+   * The gentlest arc from a to b that is clear: straight if it can be,
+   * otherwise bowed to one side or the other by the least that works.
+   */
+  const thread = (a: Pt, b: Pt, blobs: Blob[], boxes: Box[]): Pt | null => {
+    const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+    const u = unit(a, b);
+    const limit = Math.hypot(b.x - a.x, b.y - a.y) * 0.75;
+    for (let k = 0; k * 10 <= limit; k++) {
+      for (const side of k === 0 ? [1] : [1, -1]) {
+        const c = { x: mid.x - u.y * k * 10 * side, y: mid.y + u.x * k * 10 * side };
+        if (clear(a, c, b, blobs, boxes)) return c;
+      }
+    }
+    return null;
+  };
+
+  /**
+   * If the arc runs through one of the blobs, the direction to push it: away
+   * from the blob's middle, through the point where the arc comes closest.
+   */
+  const blocked = (a: Pt, c: Pt, b: Pt, blobs: Blob[]): Pt | null => {
+    for (const blob of blobs) {
+      let worst = 1;
+      let near: Pt | null = null;
+      for (let i = 1; i < 64; i++) {
+        const p = at(a, c, b, i / 64);
+        const d = ((p.x - blob.x) / blob.rx) ** 2 + ((p.y - blob.y) / blob.ry) ** 2;
+        if (d < worst) {
+          worst = d;
+          near = p;
+        }
+      }
+      if (!near) continue;
+      const flat = Math.hypot(near.x - blob.x, near.y - blob.y) < 1;
+      return unit(blob, flat ? { x: blob.x, y: blob.y - 1 } : near);
+    }
+    return null;
   };
 
   return EDGES.map((edge, index) => {
     const a: Pt = placed.get(edge.from)!;
     const b: Pt = placed.get(edge.to)!;
+
+    if (edge.kind === 'part') {
+      // A spoke: straight from the part to the rim of the medallion.
+      const u = unit(a, b);
+      const startDist = placed.get(edge.from)!.r + GAP;
+      const endDist = reach(centerId, u) + GAP;
+      return {
+        index,
+        edge,
+        d: `M${round(a.x + u.x * startDist)} ${round(a.y + u.y * startDist)}L${round(b.x - u.x * endDist)} ${round(b.y - u.y * endDist)}`,
+        arrow: '',
+      };
+    }
+
     const touchesCenter = edge.from === centerId || edge.to === centerId;
-    const hint = touchesCenter ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : control(a, b, index);
+    const touchesPart = partIds.includes(edge.from) || partIds.includes(edge.to);
+    const inside = touchesCenter || touchesPart;
+    const hint = inside ? { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } : control(a, b, index);
+    // What this line must not run through. A line into the middle threads
+    // between the parts. A line between two outside sources goes around the lot.
+    const others = partIds.filter((id) => id !== edge.from && id !== edge.to);
+    const blobs: Blob[] = !inside ? [zone] : [...(touchesCenter ? [] : [medallion]), ...others.map(partBlob)];
 
     let c1: Pt;
     let c2: Pt;
@@ -284,13 +402,15 @@ function routeEdges(
       [c1, c2] = hint;
     } else {
       let c = hint;
-      if (!touchesCenter) {
-        // Bend the arc away from the medallion until it clears.
-        for (let i = 0; i < 40 && hitsCenter(a, c, b); i++) {
-          const mid = at(a, c, b, 0.5);
-          const flat = Math.hypot(mid.x - center.x, mid.y - center.y) < 1;
-          const away = unit(center, flat ? { x: center.x, y: center.y - 1 } : mid);
-          c = { x: c.x + away.x * 14, y: c.y + away.y * 14 };
+      if (inside) {
+        // Clear of the other parts and their labels if that can be done, and
+        // of the parts themselves at the least.
+        c = thread(a, b, blobs, partIds.map(labelBox)) ?? thread(a, b, blobs, others.map(labelBox)) ?? thread(a, b, blobs, []) ?? hint;
+      } else {
+        for (let i = 0; i < 60; i++) {
+          const away = blocked(a, c, b, blobs);
+          if (!away) break;
+          c = { x: c.x + away.x * 12, y: c.y + away.y * 12 };
         }
       }
       // The same arc, written as a cubic so every line shares one path form.
@@ -321,6 +441,46 @@ function routeEdges(
       edge,
       d: `M${round(start.x)} ${round(start.y)}C${round(c1.x)} ${round(c1.y)} ${round(c2.x)} ${round(c2.y)} ${round(end.x)} ${round(end.y)}`,
       arrow,
+    };
+  });
+}
+
+/**
+ * The parts of the Constitution, set in a ring around the medallion. They run
+ * in document order from the upper left, down the left side, across the
+ * bottom, and up the right. Labels sit outside the ring, above the upper
+ * parts and below the lower ones, so none can meet another or the medallion.
+ */
+function placeRing(
+  center: RootsLayout['center'],
+  o: { rx: number; ry: number; r: number; font: number; line: number; wrap: number },
+): PlacedNode[] {
+  const parts = partsInOrder();
+  return parts.map((node, i) => {
+    const turn = (-(i + 0.5) / parts.length) * Math.PI * 2;
+    const x = center.x + o.rx * Math.sin(turn);
+    const y = center.y - o.ry * Math.cos(turn);
+    const above = y < center.y;
+    const lines = wrapLabel(typeset(node.label), o.wrap);
+    const labelW = Math.max(...lines.map((l) => l.length)) * o.font * 0.6;
+    const labelH = lines.length * o.line;
+    const w = Math.max(labelW, o.r * 2 + 12) + 8;
+    const h = o.r * 2 + 8 + labelH + 6;
+    return {
+      node,
+      x: round(x),
+      y: round(y),
+      r: o.r,
+      lines,
+      anchor: 'middle' as const,
+      lx: round(x),
+      ly: round(above ? y - o.r - 8 - (lines.length - 1) * o.line : y + o.r + 6 + o.font * 0.8),
+      hit: {
+        x: round(x - w / 2),
+        y: round(above ? y + o.r + 4 - h : y - o.r - 4),
+        w: round(w),
+        h: round(h),
+      },
     };
   });
 }
@@ -488,20 +648,26 @@ export function layoutWide(): RootsLayout {
   }
 
   const con = NODES.find((n) => n.cat === 'center')!;
-  nodes.unshift({
-    node: con,
-    x: cx,
-    y: cy,
-    r: center.ry,
-    lines: [typeset(con.label)],
-    anchor: 'middle',
-    lx: cx,
-    ly: cy,
-    hit: { x: cx - center.rx, y: cy - center.ry, w: center.rx * 2, h: center.ry * 2 },
-  });
+  const PART = 13.5;
+  const PART_LINE = 15.5;
+  const ring = { rx: 168, ry: 120 };
+  nodes.unshift(
+    {
+      node: con,
+      x: cx,
+      y: cy,
+      r: center.ry,
+      lines: [typeset(con.label)],
+      anchor: 'middle',
+      lx: cx,
+      ly: cy,
+      hit: { x: cx - center.rx, y: cy - center.ry, w: center.rx * 2, h: center.ry * 2 },
+    },
+    ...placeRing(center, { ...ring, r: 6.5, font: PART, line: PART_LINE, wrap: 18 }),
+  );
 
   const placed = new Map(nodes.map((n) => [n.node.id, n]));
-  const edges = routeEdges(placed, center, (a, b) => {
+  const edges = routeEdges(placed, center, { rx: ring.rx + 50, ry: ring.ry + 42 }, (a, b) => {
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     const sameSide = (a.x - cx) * (b.x - cx) > 0;
     if (sameSide) {
@@ -514,7 +680,7 @@ export function layoutWide(): RootsLayout {
     return { x: mid.x, y: mid.y + up * Math.abs(a.x - b.x) * 0.1 };
   });
 
-  return { variant: 'wide', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, arcs, edges };
+  return { variant: 'wide', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, partSize: PART, partLine: PART_LINE, nodes, heads, arcs, edges };
 }
 
 /**
@@ -589,30 +755,38 @@ export function layoutTall(): RootsLayout {
 
   band('roots');
   band('founding');
-  cursor += 26;
-  const center = { x: cx, y: cursor + 40, rx: 104, ry: 40 };
-  cursor += 80 + 40;
+  // The Constitution and the ring of its parts, with room for the ring's labels.
+  const PART = 12.5;
+  const PART_LINE = 14.5;
+  const ring = { rx: 130, ry: 112 };
+  const RING_ROOM = ring.ry + 46;
+  cursor += 14;
+  const center = { x: cx, y: cursor + RING_ROOM, rx: 100, ry: 38 };
+  cursor += RING_ROOM * 2 + 22;
   band('federalist');
   band('antifederalist');
   band('letters');
   const H = cursor;
 
   const con = NODES.find((n) => n.cat === 'center')!;
-  nodes.unshift({
-    node: con,
-    x: center.x,
-    y: center.y,
-    r: center.ry,
-    lines: [typeset(con.label)],
-    anchor: 'middle',
-    lx: center.x,
-    ly: center.y,
-    hit: { x: center.x - center.rx, y: center.y - center.ry, w: center.rx * 2, h: center.ry * 2 },
-  });
+  nodes.unshift(
+    {
+      node: con,
+      x: center.x,
+      y: center.y,
+      r: center.ry,
+      lines: [typeset(con.label)],
+      anchor: 'middle',
+      lx: center.x,
+      ly: center.y,
+      hit: { x: center.x - center.rx, y: center.y - center.ry, w: center.rx * 2, h: center.ry * 2 },
+    },
+    ...placeRing(center, { ...ring, r: 7, font: PART, line: PART_LINE, wrap: 12 }),
+  );
 
   const placed = new Map(nodes.map((n) => [n.node.id, n]));
   let lanes = 0;
-  const edges = routeEdges(placed, center, (a, b) => {
+  const edges = routeEdges(placed, center, { rx: ring.rx + 30, ry: ring.ry + 40 }, (a, b) => {
     const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
     const dx = b.x - a.x;
     const dy = b.y - a.y;
@@ -640,5 +814,5 @@ export function layoutTall(): RootsLayout {
     return { x: mid.x + nx * bend * flip, y: mid.y + ny * bend * flip };
   });
 
-  return { variant: 'tall', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, arcs: [], edges };
+  return { variant: 'tall', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, partSize: PART, partLine: PART_LINE, nodes, heads, arcs: [], edges };
 }
