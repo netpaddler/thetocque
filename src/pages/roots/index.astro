@@ -25,7 +25,7 @@ validateRoots();
 
 const title = 'Roots of the Constitution';
 const description =
-  'An interactive map of the sources behind the U.S. Constitution: Magna Carta, Locke, Montesquieu, the state constitutions, the Federalist, and its critics, each linked to the original text.';
+  typeset("An interactive map of the sources behind the U.S. Constitution: Magna Carta, Locke, Montesquieu, the state constitutions, the Federalist, the Anti-Federalists, and the founders' letters, each linked to the original text.");
 
 const sourceCount = NODES.filter((n) => n.cat !== 'center').length;
 const wide = layoutWide();
@@ -36,6 +36,30 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
 
 <BaseLayout title={title} description={description}>
   <div class="roots" data-roots>
+    {/* Chooses the view before the map is drawn, so it never flashes from one to the other.
+        3D is the default on a wide screen with WebGL. A phone, a reduced-motion setting, or
+        no WebGL gets the flat map. A saved choice wins over the default. */}
+    <script is:inline>
+      (function () {
+        var root = document.currentScript.parentElement;
+        var view = '2d';
+        try {
+          var saved = null;
+          try {
+            saved = localStorage.getItem('roots-view');
+          } catch (e) {}
+          var small = window.matchMedia('(max-width: 767px)').matches;
+          var calm = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          var want = saved === '2d' || saved === '3d' ? saved : small || calm ? '2d' : '3d';
+          if (want === '3d') {
+            var c = document.createElement('canvas');
+            if (c.getContext('webgl2') || c.getContext('webgl')) view = '3d';
+            else root.setAttribute('data-webgl', 'no');
+          }
+        } catch (e) {}
+        root.setAttribute('data-view', view);
+      })();
+    </script>
     <header class="wrap intro">
       <p class="kicker">An interactive map</p>
       <h1>{title}</h1>
@@ -59,6 +83,22 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
     <section class="map" aria-labelledby="map-heading">
       <h2 id="map-heading" class="sr-only">The map</h2>
       <div class="map__inner">
+
+      <div class="viewbar" data-viewbar hidden>
+        <div class="seg" role="group" aria-label="Map view">
+          <button type="button" class="seg__btn" data-set-view="2d" aria-pressed="true">2D</button>
+          <button type="button" class="seg__btn" data-set-view="3d" aria-pressed="false">3D</button>
+        </div>
+        <p class="viewnote" id="r3d-note" data-view-note>
+          The 3D view is drawn for sight and a pointer. With a keyboard or a screen reader, use the{' '}
+          <button type="button" class="textbtn" data-set-view="2d">2D map</button> or the{' '}
+          <a href="#all-sources">list of all sources</a>. They hold the same sources and connections.
+        </p>
+        <p class="viewnote viewnote--fail" data-view-fail hidden>
+          The 3D view needs WebGL, which this browser is not offering. The 2D map shows the same
+          sources and connections.
+        </p>
+      </div>
 
       <div class="toolbar">
         <ul class="legend" aria-label="Kinds of source">
@@ -104,8 +144,25 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
         <div class="plate">
           <RootsGraph layout={wide} />
           <RootsGraph layout={tall} />
-          <p class="hint" data-hint hidden>
+          <div class="r3d" data-r3d>
+            <div class="r3d__view" data-r3d-view></div>
+            <p class="r3d__loading" data-r3d-loading>Loading the 3D view</p>
+            <div class="r3d__tools" role="group" aria-label="3D view controls">
+              <button type="button" class="r3d__tool" data-r3d-in aria-label="Zoom in">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 3v10M3 8h10" /></svg>
+              </button>
+              <button type="button" class="r3d__tool" data-r3d-out aria-label="Zoom out">
+                <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8h10" /></svg>
+              </button>
+              <button type="button" class="r3d__tool r3d__tool--text" data-r3d-reset>Reset view</button>
+            </div>
+          </div>
+          <p class="hint hint--2d" data-hint hidden>
             Select a source or a line for details. Arrow keys move between sources. Esc closes.
+          </p>
+          <p class="hint hint--3d" data-hint hidden>
+            Drag to rotate. Click the map, then scroll to zoom, or pinch. Right drag or two fingers
+            to pan. Select a source or a line for details.
           </p>
         </div>
 
@@ -353,9 +410,78 @@ const payload = JSON.stringify(clientData()).replace(/</g, '\\u003c');
   }
 
   @media (max-width: 819px) {
-    .hint {
+    .hint--2d {
       display: none;
     }
+  }
+
+  /* The 2D / 3D switch */
+  .viewbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .viewbar[hidden] {
+    display: none;
+  }
+
+  .seg {
+    display: inline-flex;
+    flex: none;
+    padding: 3px;
+    border: 1.5px solid var(--ink);
+    border-radius: 999px;
+    background: var(--paper);
+  }
+  .seg__btn {
+    min-width: 3.4rem;
+    min-height: 2.25rem;
+    padding: 0.3rem 1rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition:
+      background-color 0.15s ease,
+      color 0.15s ease;
+  }
+  .seg__btn:hover {
+    color: var(--purple-dark);
+  }
+  .seg__btn[aria-pressed='true'] {
+    background: var(--r-center);
+    color: #fff;
+  }
+
+  .viewnote {
+    flex: 1 1 22rem;
+    max-width: 46rem;
+    margin: 0;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: var(--ink-muted);
+  }
+  .viewnote[hidden] {
+    display: none;
+  }
+  .textbtn {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--purple);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .textbtn:hover {
+    color: var(--purple-dark);
   }
 
   /* List view */
