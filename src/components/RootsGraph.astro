@@ -1,0 +1,299 @@
+---
+import { EDGES } from '../data/roots';
+import { categoryOf, pathOf, typeset } from '../lib/roots';
+import type { RootsLayout } from '../lib/roots';
+
+interface Props {
+  layout: RootsLayout;
+}
+
+const { layout } = Astro.props;
+const { center } = layout;
+
+const degree = (id: string) => EDGES.filter((e) => e.from === id || e.to === id).length;
+const describe = (id: string) => {
+  const n = degree(id);
+  return `${n} ${n === 1 ? 'connection' : 'connections'}`;
+};
+---
+
+<svg
+  class:list={['rg', `rg--${layout.variant}`]}
+  viewBox={`0 0 ${layout.w} ${layout.h}`}
+  role="group"
+  aria-label="Map of the sources connected to the U.S. Constitution"
+  style={`--fs:${layout.fontSize}px;--hs:${layout.headSize}px`}
+>
+  {/* Lines are a visual aid. The same connections are in each source's panel and in the list below. */}
+  <g class="rg-edges" aria-hidden="true">
+    {
+      layout.edges.map((e) => (
+        <g
+          class="rg-edge"
+          data-edge={e.index}
+          data-kind={e.edge.kind}
+          data-from={e.edge.from}
+          data-to={e.edge.to}
+        >
+          <path class="rg-edge__hit" d={e.d} />
+          <path class="rg-edge__line" d={e.d} />
+          {e.arrow && <path class="rg-edge__arrow" d={e.arrow} />}
+          <title>{typeset(e.edge.label)}</title>
+        </g>
+      ))
+    }
+  </g>
+
+  <g class="rg-heads" aria-hidden="true">
+    {
+      layout.heads.map((h) => (
+        <text class="rg-head" data-cat={h.cat} x={h.x} y={h.y} text-anchor={h.anchor}>
+          {h.lines.map((line, i) => (
+            <tspan x={h.x} dy={i === 0 ? 0 : layout.headSize + 3}>
+              {line}
+            </tspan>
+          ))}
+        </text>
+      ))
+    }
+  </g>
+
+  <g class="rg-nodes">
+    {
+      layout.nodes.map((p) => {
+        const isCenter = p.node.cat === 'center';
+        return (
+          <a
+            class:list={['rg-node', { 'rg-node--center': isCenter }]}
+            href={pathOf(p.node)}
+            data-node={p.node.id}
+            data-cat={p.node.cat}
+            aria-label={`${typeset(p.node.full)}, ${p.node.year}. ${categoryOf(p.node.cat).name}. ${describe(p.node.id)}.`}
+          >
+            {isCenter ? (
+              <>
+                <ellipse class="rg-node__focus" cx={center.x} cy={center.y} rx={center.rx + 6} ry={center.ry + 6} />
+                <ellipse class="rg-node__plate" cx={center.x} cy={center.y} rx={center.rx} ry={center.ry} />
+                <ellipse class="rg-node__inlay" cx={center.x} cy={center.y} rx={center.rx - 5} ry={center.ry - 5} />
+                <text class="rg-node__title" x={center.x} y={center.y - 1} text-anchor="middle">
+                  {p.lines[0]}
+                </text>
+                <text class="rg-node__year" x={center.x} y={center.y + 17} text-anchor="middle">
+                  {p.node.year}
+                </text>
+              </>
+            ) : (
+              <>
+                <rect class="rg-node__focus" x={p.hit.x} y={p.hit.y} width={p.hit.w} height={p.hit.h} rx="8" />
+                <circle class="rg-node__halo" cx={p.x} cy={p.y} r={p.r + 5} />
+                <circle class="rg-node__dot" cx={p.x} cy={p.y} r={p.r} />
+                <text class="rg-node__label" x={p.lx} y={p.ly} text-anchor={p.anchor}>
+                  {p.lines.map((line, i) => (
+                    <tspan x={p.lx} dy={i === 0 ? 0 : layout.lineHeight}>
+                      {line}
+                    </tspan>
+                  ))}
+                </text>
+              </>
+            )}
+          </a>
+        );
+      })
+    }
+  </g>
+</svg>
+
+<style>
+  .rg {
+    display: block;
+    width: 100%;
+    height: auto;
+    font-family: var(--font-sans);
+    /* Stops iOS from flashing a grey box over a tapped node. */
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Lines */
+  .rg-edge {
+    cursor: pointer;
+    transition: opacity 0.18s ease;
+  }
+  .rg-edge__hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 14;
+  }
+  .rg-edge__line {
+    fill: none;
+    stroke: var(--r-line);
+    stroke-width: 1.25;
+    stroke-linecap: round;
+    opacity: 0.6;
+    transition:
+      stroke 0.18s ease,
+      opacity 0.18s ease;
+  }
+  .rg-edge[data-kind='explains'] .rg-edge__line {
+    stroke-dasharray: 0.1 5;
+    stroke-width: 1.9;
+  }
+  .rg-edge[data-kind='dispute'] .rg-edge__line {
+    stroke-dasharray: 6 5;
+    stroke-linecap: butt;
+  }
+  .rg-edge__arrow {
+    fill: var(--r-line);
+    opacity: 0.6;
+    transition:
+      fill 0.18s ease,
+      opacity 0.18s ease;
+  }
+  .rg-edge:hover .rg-edge__line,
+  .rg-edge.is-on .rg-edge__line {
+    stroke: var(--ink);
+    stroke-width: 2;
+    opacity: 1;
+  }
+  .rg-edge[data-kind='explains']:hover .rg-edge__line,
+  .rg-edge[data-kind='explains'].is-on .rg-edge__line {
+    stroke-width: 2.6;
+  }
+  .rg-edge:hover .rg-edge__arrow,
+  .rg-edge.is-on .rg-edge__arrow {
+    fill: var(--ink);
+    opacity: 1;
+  }
+  .rg-edge.is-picked .rg-edge__line {
+    stroke: var(--purple);
+    stroke-width: 2.6;
+  }
+  .rg-edge.is-picked .rg-edge__arrow {
+    fill: var(--purple);
+  }
+  .rg-edge.is-filtered {
+    display: none;
+  }
+
+  /* On a phone the lines cross the labels, so they rest fainter until a
+     source is chosen. */
+  .rg--tall .rg-edge__line,
+  .rg--tall .rg-edge__arrow {
+    opacity: 0.34;
+  }
+  .rg--tall .rg-edge:hover .rg-edge__line,
+  .rg--tall .rg-edge.is-on .rg-edge__line,
+  .rg--tall .rg-edge:hover .rg-edge__arrow,
+  .rg--tall .rg-edge.is-on .rg-edge__arrow {
+    opacity: 1;
+  }
+
+  /* Group captions */
+  .rg-head {
+    font-size: var(--hs);
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    fill: var(--ink-muted);
+    paint-order: stroke;
+    stroke: var(--r-surface);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+    transition: opacity 0.18s ease;
+  }
+
+  /* Sources */
+  .rg-node {
+    cursor: pointer;
+    text-decoration: none;
+    outline: none;
+    transition: opacity 0.18s ease;
+  }
+  .rg-node__focus {
+    fill: none;
+    stroke: none;
+    /* Without this the invisible box would not catch the pointer. */
+    pointer-events: all;
+  }
+  .rg-node:focus-visible .rg-node__focus {
+    stroke: var(--purple);
+    stroke-width: 2.5;
+  }
+  .rg-node__halo {
+    fill: var(--cat);
+    opacity: 0;
+    transition: opacity 0.18s ease;
+  }
+  .rg-node__dot {
+    fill: var(--cat);
+    stroke: var(--r-surface);
+    stroke-width: 2;
+  }
+  .rg-node__label {
+    font-size: var(--fs);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    fill: var(--ink);
+    /* A parchment outline keeps a label readable where a line runs behind it. */
+    paint-order: stroke;
+    stroke: var(--r-surface);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+  }
+  .rg-node:hover .rg-node__halo,
+  .rg-node.is-hot .rg-node__halo,
+  .rg-node.is-picked .rg-node__halo {
+    opacity: 0.22;
+  }
+  .rg-node.is-picked .rg-node__dot {
+    stroke: var(--ink);
+  }
+  .rg-node.is-picked .rg-node__label {
+    fill: var(--purple-dark);
+  }
+
+  .rg-node__plate {
+    fill: var(--r-center);
+  }
+  .rg-node__inlay {
+    fill: none;
+    stroke: var(--r-gold);
+    stroke-width: 1.25;
+  }
+  .rg-node__title {
+    font-size: calc(var(--fs) + 2.5px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    fill: #fff;
+  }
+  .rg-node__year {
+    font-size: calc(var(--fs) - 3.5px);
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    fill: var(--r-gold);
+  }
+  .rg-node--center.is-picked .rg-node__inlay {
+    stroke-width: 2.5;
+  }
+
+  /* When something is hovered, focused, or selected, everything unrelated steps back. */
+  .rg.has-active .rg-node:not(.is-on) {
+    opacity: 0.28;
+  }
+  .rg.has-active .rg-edge:not(.is-on) {
+    opacity: 0.12;
+  }
+  .rg.has-active .rg-head {
+    opacity: 0.45;
+  }
+
+  @media (forced-colors: active) {
+    .rg-edge__line {
+      stroke: CanvasText;
+    }
+    .rg-node__dot {
+      stroke: CanvasText;
+    }
+    .rg-node__label {
+      stroke: none;
+    }
+  }
+</style>

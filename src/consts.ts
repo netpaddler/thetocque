@@ -38,6 +38,7 @@ export const substackFeed = () =>
 
 export const NAV = [
   { href: '/blog/', label: 'Essays' },
+  { href: '/roots/', label: 'Roots' },
   { href: '/about/', label: 'About' },
   { href: '/merch/', label: 'Merch' },
 ] as const;
