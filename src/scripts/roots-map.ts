@@ -1,11 +1,34 @@
 /**
  * Behavior for the map on /roots. The SVG, the list, and every link already
  * work without this file. It adds hover and focus highlighting, the details
- * panel, the line filters, and arrow-key movement.
+ * panel, the line filters, arrow-key movement, and the switch between the
+ * flat map and the 3D view. The 3D code is loaded only when that view opens.
  */
 import type { RootsClientData } from '../lib/roots';
 
-type Pick = { type: 'node'; id: string } | { type: 'edge'; index: number };
+export type Pick = { type: 'node'; id: string } | { type: 'edge'; index: number };
+
+/** What is highlighted right now. Both views draw from this one state. */
+export interface RootsView {
+  picked: Pick | null;
+  hot: Pick | null;
+  /** True when the selection was made on the map itself, not from the panel. */
+  pickedOnMap: boolean;
+  onNodes: Set<string>;
+  onEdges: Set<number>;
+  hiddenKinds: Set<string>;
+}
+
+/** The handle the 3D view uses to share the panel, the filters, and the highlighting. */
+export interface RootsApi {
+  data: RootsClientData;
+  view(): RootsView;
+  select(pick: Pick, fromMap: boolean): void;
+  close(returnFocus: boolean): void;
+  setHot(pick: Pick | null): void;
+  subscribe(listener: (view: RootsView) => void): () => void;
+  say(text: string): void;
+}
 type Child = Node | string | null | false;
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
@@ -53,12 +76,12 @@ function closeIcon(): SVGSVGElement {
 
 const srOnly = (text: string) => h('span', { class: 'sr-only' }, text);
 
-function init(root: HTMLElement) {
+function init(root: HTMLElement): RootsApi | null {
   const source = document.getElementById('roots-data');
   const panel = root.querySelector<HTMLElement>('[data-panel]');
   const body = root.querySelector<HTMLElement>('[data-body]');
   const status = root.querySelector<HTMLElement>('[data-status]');
-  if (!source?.textContent || !panel || !body) return;
+  if (!source?.textContent || !panel || !body) return null;
 
   const data = JSON.parse(source.textContent) as RootsClientData;
   type NodeData = RootsClientData['nodes'][number];
@@ -74,6 +97,16 @@ function init(root: HTMLElement) {
   const hiddenKinds = new Set<string>();
   let picked: Pick | null = null;
   let hot: Pick | null = null;
+  let pickedOnMap = false;
+  let current: RootsView = {
+    picked,
+    hot,
+    pickedOnMap,
+    onNodes: new Set(),
+    onEdges: new Set(),
+    hiddenKinds,
+  };
+  const listeners = new Set<(view: RootsView) => void>();
   /** What had focus before the panel opened, so Esc can hand it back. */
   let opener: Element | null = null;
 
@@ -119,6 +152,9 @@ function init(root: HTMLElement) {
       el.classList.toggle('is-picked', picked?.type === 'edge' && picked.index === index);
       el.classList.toggle('is-filtered', hiddenKinds.has(el.dataset.kind ?? ''));
     }
+
+    current = { picked, hot, pickedOnMap, onNodes, onEdges, hiddenKinds };
+    for (const listener of listeners) listener(current);
   }
 
   /* ---------- panel ---------- */
@@ -231,6 +267,7 @@ function init(root: HTMLElement) {
   function select(pick: Pick, fromMap: boolean) {
     if (fromMap || !opener) opener = document.activeElement;
     picked = pick;
+    pickedOnMap = fromMap;
     hot = null;
     const content =
       pick.type === 'node' ? renderNode(nodes.get(pick.id)!) : renderEdge(data.edges[pick.index]!);
@@ -374,9 +411,116 @@ function init(root: HTMLElement) {
     }
   }
 
-  const hint = root.querySelector<HTMLElement>('[data-hint]');
-  if (hint) hint.hidden = false;
+  for (const hint of Array.from(root.querySelectorAll<HTMLElement>('[data-hint]'))) hint.hidden = false;
+
+  return {
+    data,
+    view: () => current,
+    select,
+    close: closePanel,
+    setHot(pick) {
+      const same =
+        (pick === null && hot === null) ||
+        (pick?.type === 'node' && hot?.type === 'node' && pick.id === hot.id) ||
+        (pick?.type === 'edge' && hot?.type === 'edge' && pick.index === hot.index);
+      if (same) return;
+      hot = pick;
+      paint();
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    say,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* The 2D / 3D switch.                                                 */
+/* ------------------------------------------------------------------ */
+
+type Mode = '2d' | '3d';
+const STORE = 'roots-view';
+
+function initViews(root: HTMLElement, api: RootsApi) {
+  const bar = root.querySelector<HTMLElement>('[data-viewbar]');
+  const stage = root.querySelector<HTMLElement>('[data-r3d]');
+  const host = root.querySelector<HTMLElement>('[data-r3d-view]');
+  const loading = root.querySelector<HTMLElement>('[data-r3d-loading]');
+  if (!bar || !stage || !host) return;
+  const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('button[data-set-view]'));
+
+  let mode: Mode = '2d';
+  let scene: { dispose(): void; reset(): void; zoom(factor: number): void } | null = null;
+  /** Guards against a slow load finishing after the reader has switched back. */
+  let ticket = 0;
+
+  const show = (next: Mode) => {
+    mode = next;
+    root.dataset.view = next;
+    for (const b of buttons) {
+      if (b.hasAttribute('aria-pressed')) b.setAttribute('aria-pressed', String(b.dataset.setView === next));
+    }
+  };
+
+  async function set(next: Mode, remember: boolean) {
+    if (remember) {
+      try {
+        localStorage.setItem(STORE, next);
+      } catch {
+        // Private browsing can refuse storage. The switch still works for this visit.
+      }
+    }
+    const mine = ++ticket;
+    if (next === '2d') {
+      scene?.dispose();
+      scene = null;
+      show('2d');
+      return;
+    }
+    if (scene) return;
+    show('3d');
+    if (loading) {
+      loading.hidden = false;
+      loading.textContent = 'Loading the 3D view';
+    }
+    try {
+      const { mount } = await import('./roots-3d');
+      if (mine !== ticket) return;
+      scene = mount(host!, api);
+      if (loading) loading.hidden = true;
+    } catch (error) {
+      if (mine !== ticket) return;
+      console.warn('Roots: the 3D view could not start.', error);
+      root.dataset.webgl = 'no';
+      show('2d');
+      api.say('The 3D view is not available in this browser. Showing the 2D map.');
+      const note = root.querySelector<HTMLElement>('[data-view-fail]');
+      if (note) note.hidden = false;
+    }
+  }
+
+  for (const b of buttons) {
+    b.addEventListener('click', () => {
+      const next = b.dataset.setView === '3d' ? '3d' : '2d';
+      if (next === mode && (next === '2d' || scene)) return;
+      void set(next, true);
+      api.say(next === '3d' ? 'Showing the 3D view.' : 'Showing the 2D map.');
+    });
+  }
+  root.querySelector('[data-r3d-reset]')?.addEventListener('click', () => scene?.reset());
+  root.querySelector('[data-r3d-in]')?.addEventListener('click', () => scene?.zoom(0.72));
+  root.querySelector('[data-r3d-out]')?.addEventListener('click', () => scene?.zoom(1.38));
+
+  bar.hidden = false;
+  // The small script at the top of the page has already chosen the view, so
+  // the right one is on screen before this file loads.
+  void set(root.dataset.view === '3d' ? '3d' : '2d', false);
 }
 
 const root = document.querySelector<HTMLElement>('[data-roots]');
-if (root) init(root);
+if (root) {
+  const api = init(root);
+  if (api) initViews(root, api);
+  else root.dataset.view = '2d';
+}

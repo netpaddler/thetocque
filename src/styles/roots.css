@@ -1,5 +1,5 @@
 /* Shared dress for the Roots of the Constitution pages (/roots and /roots/<slug>).
-   Parchment, ink, navy, deep red, and muted gold, sitting inside the site's
+   Parchment, ink, navy, deep red, deep teal, and muted gold, sitting inside the site's
    own type and spacing. Category hues were checked for color-blind separation
    and for 3:1 contrast against the parchment surface. Labels are always ink. */
 .roots {
@@ -11,7 +11,8 @@
   --r-roots: #a67c14;
   --r-founding: #2a5a9c;
   --r-federalist: #8a2fd0;
-  --r-critics: #a3322b;
+  --r-antifederalist: #a3322b;
+  --r-letters: #0f7568;
 }
 
 .roots [data-cat='center'] {
@@ -26,8 +27,11 @@
 .roots [data-cat='federalist'] {
   --cat: var(--r-federalist);
 }
-.roots [data-cat='critics'] {
-  --cat: var(--r-critics);
+.roots [data-cat='antifederalist'] {
+  --cat: var(--r-antifederalist);
+}
+.roots [data-cat='letters'] {
+  --cat: var(--r-letters);
 }
 
 .roots .kicker {
@@ -373,4 +377,214 @@
   margin: 1rem 0 0;
   font-size: 0.875rem;
   color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* The 3D view. Its canvas and labels are built in the browser, so the */
+/* rules live here. `data-view` on .roots says which map is showing.   */
+/* ------------------------------------------------------------------ */
+.roots .r3d,
+.roots .hint--3d,
+.roots [data-view-note] {
+  display: none;
+}
+.roots[data-view='3d'] .plate .rg,
+.roots[data-view='3d'] .hint--2d {
+  display: none;
+}
+.roots[data-view='3d'] .r3d {
+  display: block;
+}
+.roots[data-view='3d'] .hint--3d:not([hidden]),
+.roots[data-view='3d'] [data-view-note] {
+  display: block;
+}
+
+.roots .r3d {
+  position: relative;
+  height: clamp(380px, 68vh, min(620px, 118vw));
+  border: 1px solid var(--r-rule);
+  border-radius: var(--radius);
+  background: var(--r-surface);
+  overflow: hidden;
+}
+@media (min-width: 820px) {
+  .roots .r3d {
+    height: clamp(540px, 76vh, 780px);
+  }
+}
+.roots .r3d__view {
+  position: absolute;
+  inset: 0;
+  cursor: grab;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.roots .r3d__view:active {
+  cursor: grabbing;
+}
+.roots .r3d-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.roots .r3d__loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  pointer-events: none;
+}
+.roots .r3d__loading[hidden] {
+  display: none;
+}
+
+.roots .r3d-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  font-family: var(--font-sans);
+}
+.roots .r3d-label,
+.roots .r3d-cluster {
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  will-change: transform, opacity;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  /* A parchment edge keeps the words readable where a line runs behind them. */
+  text-shadow:
+    0 0 2px var(--r-surface),
+    0 0 2px var(--r-surface),
+    0 0 4px var(--r-surface),
+    0 0 6px var(--r-surface),
+    1px 1px 0 var(--r-surface),
+    -1px -1px 0 var(--r-surface),
+    1px -1px 0 var(--r-surface),
+    -1px 1px 0 var(--r-surface);
+}
+.roots .r3d-label {
+  max-width: 8.75em;
+  white-space: normal;
+  text-wrap: balance;
+  text-align: center;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.roots .r3d-label--short {
+  font-size: 0.72rem;
+}
+.roots .r3d-label.is-off,
+.roots .r3d-cluster.is-off {
+  filter: opacity(0.3);
+}
+.roots .r3d-label.is-picked {
+  color: var(--purple-dark);
+}
+.roots .r3d-label--center {
+  max-width: none;
+  padding: 0.3rem 0.95rem 0.35rem;
+  border: 1px solid var(--r-gold);
+  border-radius: 999px;
+  background: var(--r-center);
+  box-shadow: 0 2px 10px rgb(35 45 63 / 0.18);
+  text-shadow: none;
+  white-space: nowrap;
+}
+.roots .r3d-label__title {
+  font-size: 0.875rem;
+  color: #fff;
+}
+.roots .r3d-label__year {
+  margin-top: 0.05rem;
+  font-size: 0.66rem;
+  letter-spacing: 0.22em;
+  text-indent: 0.22em;
+  color: var(--r-gold);
+}
+.roots .r3d-cluster {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.roots .r3d__tools {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  display: flex;
+  gap: 0.4rem;
+}
+.roots .r3d__tool {
+  display: inline-grid;
+  place-items: center;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--r-rule);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.92);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+.roots .r3d__tool:hover {
+  border-color: var(--purple);
+  color: var(--purple-dark);
+}
+.roots .r3d__tool--text {
+  padding-inline: 1rem;
+}
+.roots .r3d__tool svg {
+  width: 1rem;
+  height: 1rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+}
+.roots:not([data-view='3d']) .r3d__tools {
+  display: none;
+}
+
+@media (forced-colors: active) {
+  .roots .r3d-label,
+  .roots .r3d-cluster {
+    text-shadow: none;
+  }
+}
+
+@media (max-width: 599px) {
+  .roots .r3d-label {
+    font-size: 0.72rem;
+  }
+  .roots .r3d-label__title {
+    font-size: 0.78rem;
+  }
+  .roots .r3d-label--center {
+    padding: 0.2rem 0.7rem 0.25rem;
+  }
+  .roots .r3d-cluster {
+    font-size: 0.6rem;
+  }
 }

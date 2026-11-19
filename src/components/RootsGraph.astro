@@ -44,6 +44,11 @@ const describe = (id: string) => {
     }
   </g>
 
+  {/* A soft stroke in the cluster's color ties each group of sources together. */}
+  <g class="rg-arcs" aria-hidden="true">
+    {layout.arcs.map((a) => <path class="rg-arc" data-cat={a.cat} d={a.d} />)}
+  </g>
+
   <g class="rg-heads" aria-hidden="true">
     {
       layout.heads.map((h) => (
@@ -185,6 +190,20 @@ const describe = (id: string) => {
   .rg--tall .rg-edge:hover .rg-edge__arrow,
   .rg--tall .rg-edge.is-on .rg-edge__arrow {
     opacity: 1;
+  }
+
+  /* Cluster arcs */
+  .rg-arc {
+    fill: none;
+    stroke: var(--cat);
+    stroke-width: 7;
+    stroke-linecap: round;
+    opacity: 0.2;
+    pointer-events: none;
+    transition: opacity 0.18s ease;
+  }
+  .rg.has-active .rg-arc {
+    opacity: 0.1;
   }
 
   /* Group captions */
