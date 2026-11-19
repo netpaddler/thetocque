@@ -1,0 +1,44 @@
+---
+import type { RootEdge } from '../data/roots';
+import { kindOf, nodeById, pathOf, typeset } from '../lib/roots';
+
+interface Props {
+  edge: RootEdge;
+  /** The source this connection is being listed under. */
+  self: string;
+  heading?: 'h3' | 'h5';
+}
+
+const { edge, self, heading: Heading = 'h3' } = Astro.props;
+const outgoing = edge.from === self;
+const other = nodeById(outgoing ? edge.to : edge.from);
+const kind = kindOf(edge.kind);
+// Both ends are linked, because a quote can come from either one.
+const sources = [nodeById(edge.from), nodeById(edge.to)];
+---
+
+<li class="conn">
+  <p class="conn__kind">
+    <svg class="stroke" data-kind={edge.kind} viewBox="0 0 30 10" aria-hidden="true">
+      <line x1="1" y1="5" x2="29" y2="5"></line>
+    </svg>
+    <span>{outgoing ? kind.out : kind.in}</span>
+    <a href={pathOf(other)}>{typeset(other.label)}</a>
+  </p>
+  <Heading class="conn__label">{typeset(edge.label)}</Heading>
+  <p class="conn__detail">{typeset(edge.detail)}</p>
+  <p class="conn__src">
+    Primary sources:{' '}
+    {
+      sources.map((s, i) => (
+        <>
+          {i > 0 && ' and '}
+          <a class="ext" href={s.href} target="_blank" rel="noopener">
+            {typeset(s.label)}
+            <span class="sr-only"> at {typeset(s.site)} (opens in a new tab)</span>
+          </a>
+        </>
+      ))
+    }
+  </p>
+</li>

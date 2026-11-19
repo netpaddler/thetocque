@@ -1,0 +1,376 @@
+/* Shared dress for the Roots of the Constitution pages (/roots and /roots/<slug>).
+   Parchment, ink, navy, deep red, and muted gold, sitting inside the site's
+   own type and spacing. Category hues were checked for color-blind separation
+   and for 3:1 contrast against the parchment surface. Labels are always ink. */
+.roots {
+  --r-surface: #fcfaf4;
+  --r-rule: #e6dfcd;
+  --r-line: #6a7286;
+  --r-center: #232d3f;
+  --r-gold: #c9a24a;
+  --r-roots: #a67c14;
+  --r-founding: #2a5a9c;
+  --r-federalist: #8a2fd0;
+  --r-critics: #a3322b;
+}
+
+.roots [data-cat='center'] {
+  --cat: var(--r-center);
+}
+.roots [data-cat='roots'] {
+  --cat: var(--r-roots);
+}
+.roots [data-cat='founding'] {
+  --cat: var(--r-founding);
+}
+.roots [data-cat='federalist'] {
+  --cat: var(--r-federalist);
+}
+.roots [data-cat='critics'] {
+  --cat: var(--r-critics);
+}
+
+.roots .kicker {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--purple-dark);
+}
+
+.roots .lede {
+  font-size: clamp(1.05rem, 2vw, 1.2rem);
+  color: var(--ink-muted);
+}
+
+.roots .dot {
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+  background: var(--cat);
+  flex: none;
+}
+.roots [data-cat='center'] > .dot,
+.roots .dot[data-cat='center'] {
+  box-shadow: 0 0 0 2px var(--r-gold);
+}
+
+/* The three line styles, drawn the same way everywhere they appear. */
+.roots .stroke {
+  flex: none;
+  width: 30px;
+  height: 10px;
+  overflow: visible;
+}
+.roots .stroke line {
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+.roots .stroke[data-kind='explains'] line {
+  stroke-dasharray: 0.1 5;
+}
+.roots .stroke[data-kind='dispute'] line {
+  stroke-dasharray: 6 5;
+  stroke-linecap: butt;
+}
+
+.roots .note {
+  margin: 0;
+  padding: 0.9rem 1.15rem;
+  border-left: 3px solid var(--r-gold);
+  background: var(--r-surface);
+  border-radius: 0 12px 12px 0;
+  color: var(--ink);
+  font-size: 0.95rem;
+  max-width: var(--measure);
+}
+
+.roots .ext::after {
+  content: ' \2197';
+  font-size: 0.85em;
+}
+
+.roots .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* One connection, as shown in the list and on each source page. */
+.roots .conn {
+  padding: 1rem 0;
+  border-top: 1px solid var(--rule);
+}
+.roots .conn__kind {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.55rem;
+  margin: 0 0 0.3rem;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+.roots .conn__kind a {
+  font-weight: 600;
+}
+.roots .conn__label {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.roots .conn__detail {
+  margin: 0;
+  color: var(--ink);
+  font-size: 0.97rem;
+}
+.roots .conn__src {
+  margin: 0.4rem 0 0;
+  font-size: 0.85rem;
+  color: var(--ink-muted);
+}
+
+/* ------------------------------------------------------------------ */
+/* Details panel. Its contents are built in the browser, so these      */
+/* rules live here instead of in a scoped component style.            */
+/* A bottom sheet on phones and tablets, a side column on wide screens. */
+/* ------------------------------------------------------------------ */
+.roots .rp {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 50;
+  max-height: min(62vh, 560px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: 0 -12px 40px rgb(35 45 63 / 0.18);
+  padding: 1.1rem var(--pad) calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  animation: rp-rise 0.22s ease-out;
+}
+.roots .rp[data-open='false'] {
+  display: none;
+}
+@keyframes rp-rise {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+.roots .rp__empty {
+  display: none;
+}
+.roots .rp__body[hidden] {
+  display: none;
+}
+
+@media (min-width: 1120px) {
+  .roots .rp,
+  .roots .rp[data-open='false'] {
+    display: block;
+    position: sticky;
+    inset: 1.25rem auto auto auto;
+    z-index: auto;
+    max-height: calc(100vh - 2.5rem);
+    border: 1px solid var(--rule);
+    border-radius: var(--radius);
+    box-shadow: none;
+    padding: 1.4rem 1.4rem 1.5rem;
+    animation: none;
+  }
+  .roots .rp[data-open='false'] .rp__empty {
+    display: block;
+  }
+}
+
+.roots .rp__eyebrow,
+.roots .rp-cat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.roots .rp__prompt {
+  margin: 0.6rem 0 0.5rem;
+  font-size: 1.3rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+.roots .rp__help {
+  margin: 0;
+  font-size: 0.925rem;
+  color: var(--ink-muted);
+}
+
+.roots .rp-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 2.25rem;
+}
+.roots .rp-close {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin: -0.4rem -0.5rem -0.4rem 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.roots .rp-close:hover {
+  background: var(--paper-alt);
+  color: var(--ink);
+}
+.roots .rp-close svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.roots .rp-title {
+  margin: 0.55rem 0 0.3rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  outline: none;
+}
+.roots .rp-meta {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--ink-muted);
+}
+.roots .rp-about {
+  margin: 0 0 1rem;
+  font-size: 0.97rem;
+}
+.roots .rp-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.1rem;
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.roots .rp-links .btn {
+  padding: 0.5em 1.1em;
+}
+.roots .rp-links a:not(.btn) {
+  text-decoration: none;
+}
+.roots .rp-links a:not(.btn):hover {
+  text-decoration: underline;
+}
+
+.roots .rp-sub {
+  margin: 1.4rem 0 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--rule);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.roots .rp-conns {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.roots .rp-conn {
+  display: block;
+  width: 100%;
+  padding: 0.8rem 0.6rem;
+  margin-inline: -0.6rem;
+  width: calc(100% + 1.2rem);
+  border: 0;
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.roots .rp-conn:hover {
+  background: var(--r-surface);
+}
+.roots .rp-conn__kind {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--ink-muted);
+}
+.roots .rp-conn__kind strong {
+  color: var(--purple);
+  font-weight: 600;
+}
+.roots .rp-conn:hover .rp-conn__kind strong {
+  text-decoration: underline;
+}
+.roots .rp-conn__label {
+  display: block;
+  margin-top: 0.2rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.roots .rp-conn__detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+/* A single connection: the two ends, side by side. */
+.roots .rp-ends {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  margin: 0.75rem 0 1rem;
+  color: var(--ink-muted);
+}
+.roots .rp-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.roots .rp-end:hover {
+  border-color: var(--purple);
+  color: var(--purple-dark);
+}
+.roots .rp-sources {
+  margin: 1rem 0 0;
+  font-size: 0.875rem;
+  color: var(--ink-muted);
+}

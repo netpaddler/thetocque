@@ -1,0 +1,159 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import RootsConnection from '../../components/RootsConnection.astro';
+import { NODES } from '../../data/roots';
+import type { RootNode } from '../../data/roots';
+import {
+  ROOTS_NOTE,
+  categoryOf,
+  incoming,
+  outgoing,
+  slugOf,
+  typeset,
+  validateRoots,
+} from '../../lib/roots';
+import '../../styles/roots.css';
+
+export function getStaticPaths() {
+  validateRoots();
+  return NODES.map((node) => ({ params: { slug: slugOf(node) }, props: { node } }));
+}
+
+interface Props {
+  node: RootNode;
+}
+
+const { node } = Astro.props;
+const category = categoryOf(node.cat);
+const from = outgoing(node.id);
+const to = incoming(node.id);
+const isCenter = node.cat === 'center';
+
+const title = isCenter ? `${node.full}: its roots` : `${node.full} and the Constitution`;
+const description = typeset(
+  isCenter
+    ? `${node.about} See the ${to.length} sources that shaped it, explain it, or dispute it, each linked to the original text.`
+    : `${node.full} (${node.year}), ${node.author}. ${node.about} See how it connects to the U.S. Constitution, with links to the original text.`,
+);
+---
+
+<BaseLayout title={typeset(title)} description={description}>
+  <article class="roots wrap page">
+    <p class="back"><a href="/roots/"><span aria-hidden="true">&larr; </span>Back to the map</a></p>
+
+    <header class="head">
+      <p class="cat" data-cat={node.cat}>
+        <span class="dot"></span>
+        {category.name}
+      </p>
+      <h1>{typeset(node.full)}</h1>
+      <p class="meta">{typeset(node.author)} · {node.year}</p>
+      <p class="lede">{typeset(node.about)}</p>
+      <p class="actions">
+        <a class="btn" href={node.href} target="_blank" rel="noopener">
+          <span class="ext">Read it at {typeset(node.site)}</span>
+          <span class="sr-only"> (opens in a new tab)</span>
+        </a>
+      </p>
+    </header>
+
+    {
+      from.length > 0 && (
+        <section class="block" aria-labelledby="from-heading">
+          <h2 id="from-heading">{isCenter ? 'Where it leads' : 'What it connects to'}</h2>
+          <ul class="conns">
+            {from.map((edge) => <RootsConnection edge={edge} self={node.id} />)}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      to.length > 0 && (
+        <section class="block" aria-labelledby="to-heading">
+          <h2 id="to-heading">What connects to it</h2>
+          <ul class="conns">
+            {to.map((edge) => <RootsConnection edge={edge} self={node.id} />)}
+          </ul>
+        </section>
+      )
+    }
+
+    <p class="note">{ROOTS_NOTE}</p>
+
+    <p class="back back--end">
+      <a href="/roots/"><span aria-hidden="true">&larr; </span>Back to the map</a>
+    </p>
+  </article>
+</BaseLayout>
+
+<style>
+  .page {
+    padding-block: clamp(2rem, 5vw, 3.5rem) 0;
+  }
+
+  .back {
+    margin: 0 0 clamp(1.5rem, 4vw, 2.5rem);
+    font-weight: 600;
+  }
+  .back a {
+    text-decoration: none;
+  }
+  .back a:hover {
+    text-decoration: underline;
+  }
+  .back--end {
+    margin: clamp(2rem, 5vw, 3rem) 0 0;
+  }
+
+  .head {
+    max-width: var(--measure);
+  }
+
+  .cat {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0 0 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+  }
+
+  h1 {
+    margin-bottom: 0.35em;
+  }
+
+  .meta {
+    margin: 0 0 1.25rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+  }
+
+  .actions {
+    margin: 1.75rem 0 0;
+  }
+
+  .block {
+    max-width: var(--measure);
+    margin-top: clamp(2.5rem, 6vw, 3.5rem);
+  }
+
+  .block h2 {
+    font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+    margin-bottom: 0.75rem;
+  }
+
+  .conns {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .note {
+    margin-top: clamp(2.5rem, 6vw, 3.5rem);
+  }
+</style>
