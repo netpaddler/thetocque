@@ -15,8 +15,12 @@ export const CATEGORIES: { id: Cat; name: string; short: string }[] = [
   { id: 'roots', name: 'English and Enlightenment roots', short: 'English and Enlightenment roots' },
   { id: 'founding', name: 'American founding documents', short: 'American founding documents' },
   { id: 'federalist', name: 'The Federalist', short: 'The Federalist' },
-  { id: 'critics', name: "Anti-Federalists and founders' letters", short: "Anti-Federalists and letters" },
+  { id: 'antifederalist', name: 'Anti-Federalists', short: 'Anti-Federalists' },
+  { id: 'letters', name: "Founders' letters and writings", short: "Founders' letters" },
 ];
+
+/** The clusters around the Constitution, in display order. */
+export const CLUSTERS = CATEGORIES.filter((c) => c.id !== 'center');
 
 export const KINDS: { id: Kind; name: string; out: string; in: string }[] = [
   { id: 'influence', name: 'Shaped it', out: 'Shaped', in: 'Shaped by' },
@@ -81,21 +85,52 @@ export const byAge = (a: RootNode, b: RootNode) =>
   yearOf(a) - yearOf(b) || a.label.localeCompare(b.label, 'en', { numeric: true });
 
 export const nodesIn = (cat: Cat) => NODES.filter((n) => n.cat === cat).sort(byAge);
+
+/**
+ * A cluster with more sources than this is drawn compactly, several to a row,
+ * so the map still fits when (for example) all 85 Federalist Papers are added.
+ */
+export const COMPACT_OVER = 12;
+
+/**
+ * Short labels for a crowded cluster: the words every label starts with are
+ * dropped, so "Federalist 10" reads "10" under the heading "The Federalist".
+ */
+export function shortLabels(list: { id: string; label: string }[]): Map<string, string> {
+  const words = list.map((n) => n.label.split(' '));
+  let shared = 0;
+  while (
+    words.length > 1 &&
+    words.every((w) => w.length > shared + 1 && w[shared] === words[0]![shared])
+  ) {
+    shared++;
+  }
+  return new Map(list.map((n, i) => [n.id, words[i]!.slice(shared).join(' ')]));
+}
 export const outgoing = (id: string): RootEdge[] => EDGES.filter((e) => e.from === id);
 export const incoming = (id: string): RootEdge[] => EDGES.filter((e) => e.to === id);
 
 /** The payload the map script reads. Text is typeset here so the browser does no string work. */
 export function clientData() {
+  const short = new Map<string, string>();
+  for (const c of CLUSTERS) {
+    const list = nodesIn(c.id).map((n) => ({ id: n.id, label: typeset(n.label) }));
+    if (list.length <= COMPACT_OVER) continue;
+    for (const [id, text] of shortLabels(list)) short.set(id, text);
+  }
   return {
     nodes: NODES.map((n) => ({
       id: n.id,
       path: pathOf(n),
       label: typeset(n.label),
+      /** The label to draw in the 3D view: shortened only in a crowded cluster. */
+      short: short.get(n.id) ?? typeset(n.label),
       full: typeset(n.full),
       year: n.year,
       author: typeset(n.author),
       cat: n.cat,
       catName: categoryOf(n.cat).name,
+      age: yearOf(n),
       about: typeset(n.about),
       href: n.href,
       site: typeset(n.site),
@@ -108,6 +143,11 @@ export function clientData() {
       detail: typeset(e.detail),
     })),
     kinds: KINDS,
+    clusters: CLUSTERS.map((c) => ({
+      id: c.id,
+      name: typeset(c.short),
+      compact: nodesIn(c.id).length > COMPACT_OVER,
+    })),
   };
 }
 export type RootsClientData = ReturnType<typeof clientData>;
@@ -142,6 +182,12 @@ export interface PlacedHead {
   y: number;
 }
 
+/** A soft stroke behind one cluster, tying its sources together. */
+export interface PlacedArc {
+  cat: Cat;
+  d: string;
+}
+
 export interface PlacedEdge {
   index: number;
   edge: RootEdge;
@@ -160,6 +206,7 @@ export interface RootsLayout {
   center: { x: number; y: number; rx: number; ry: number };
   nodes: PlacedNode[];
   heads: PlacedHead[];
+  arcs: PlacedArc[];
   edges: PlacedEdge[];
 }
 
@@ -186,7 +233,7 @@ export function wrapLabel(label: string, max: number): string[] {
 
 const sideCats = (): { left: Cat[]; right: Cat[] } => {
   // Sources that shaped the text sit on the left. The debate over it sits on the right.
-  return { left: ['roots', 'founding'], right: ['federalist', 'critics'] };
+  return { left: ['roots', 'founding'], right: ['federalist', 'antifederalist', 'letters'] };
 };
 
 function routeEdges(
@@ -297,8 +344,17 @@ export function layoutWide(): RootsLayout {
   const RX = W / 2 - MARGIN - LABEL_W - 18;
   const cx = W / 2;
 
-  type Item = { type: 'head'; cat: Cat } | { type: 'node'; node: RootNode } | { type: 'gap' };
-  const weight = { head: 0.85, node: 1, gap: 0.55 };
+  /** Crowded clusters: this many short-labelled sources share a row. */
+  const PER_ROW = 4;
+  const STEP = 42;
+  const R_SMALL = 6;
+
+  type Item =
+    | { type: 'head'; cat: Cat }
+    | { type: 'node'; node: RootNode }
+    | { type: 'row'; nodes: RootNode[]; short: Map<string, string> }
+    | { type: 'gap' };
+  const weight = { head: 0.85, node: 1, row: 0.62, gap: 0.55 };
   const build = (cats: Cat[]): Item[] => {
     const items: Item[] = [];
     cats
@@ -306,7 +362,15 @@ export function layoutWide(): RootsLayout {
       .forEach((cat, i) => {
         if (i > 0) items.push({ type: 'gap' });
         items.push({ type: 'head', cat });
-        for (const node of nodesIn(cat)) items.push({ type: 'node', node });
+        const list = nodesIn(cat);
+        if (list.length > COMPACT_OVER) {
+          const short = shortLabels(list.map((n) => ({ id: n.id, label: typeset(n.label) })));
+          for (let k = 0; k < list.length; k += PER_ROW) {
+            items.push({ type: 'row', nodes: list.slice(k, k + PER_ROW), short });
+          }
+        } else {
+          for (const node of list) items.push({ type: 'node', node });
+        }
       });
     return items;
   };
@@ -329,17 +393,39 @@ export function layoutWide(): RootsLayout {
 
   const nodes: PlacedNode[] = [];
   const heads: PlacedHead[] = [];
+  const arcs: PlacedArc[] = [];
 
   for (const col of columns) {
     const total = units(col.items);
     if (total === 0) continue;
     const pitch = span / total;
     let cursor = PAD_Y;
+    /** The stretch of the column the current cluster covers, for its arc. */
+    let run: { cat: Cat; from: number; to: number } | null = null;
+    const closeRun = () => {
+      if (!run) return;
+      const pts: string[] = [];
+      const steps = Math.max(2, Math.ceil((run.to - run.from) / 10));
+      for (let i = 0; i <= steps; i++) {
+        const yy = run.from + ((run.to - run.from) * i) / steps;
+        pts.push(`${round(cx + col.dir * bow(yy))} ${round(yy)}`);
+      }
+      arcs.push({ cat: run.cat, d: `M${pts.join('L')}` });
+      run = null;
+    };
     for (const item of col.items) {
       const size = weight[item.type] * pitch;
       const y = cursor + size / 2;
       cursor += size;
-      if (item.type === 'gap') continue;
+      if (item.type === 'gap') {
+        closeRun();
+        continue;
+      }
+      if (item.type === 'head') run = { cat: item.cat, from: cursor, to: cursor };
+      else if (run) {
+        if (run.from === run.to) run.from = y - Math.min(size, pitch) * 0.42;
+        run.to = y + Math.min(size, pitch) * 0.42;
+      }
       const x = cx + col.dir * bow(y);
       const anchor = col.dir < 0 ? 'end' : 'start';
       if (item.type === 'head') {
@@ -352,6 +438,28 @@ export function layoutWide(): RootsLayout {
           anchor,
           x: round(cx + col.dir * (bow(yy) + R + 9)),
           y: round(yy - ((lines.length - 1) * (HEAD + 3)) / 2 + HEAD * 0.36),
+        });
+        continue;
+      }
+      if (item.type === 'row') {
+        item.nodes.forEach((node, k) => {
+          const nx = x + col.dir * k * STEP;
+          nodes.push({
+            node,
+            x: round(nx),
+            y: round(y),
+            r: R_SMALL,
+            lines: [item.short.get(node.id) ?? typeset(node.label)],
+            anchor,
+            lx: round(nx + col.dir * (R_SMALL + 5)),
+            ly: round(y + FONT * 0.36),
+            hit: {
+              x: round(col.dir < 0 ? nx + R_SMALL + 3 - (STEP - 2) : nx - R_SMALL - 3),
+              y: round(y - Math.min(size - 2, 30) / 2),
+              w: STEP - 2,
+              h: round(Math.min(size - 2, 30)),
+            },
+          });
         });
         continue;
       }
@@ -376,6 +484,7 @@ export function layoutWide(): RootsLayout {
         },
       });
     }
+    closeRun();
   }
 
   const con = NODES.find((n) => n.cat === 'center')!;
@@ -405,12 +514,12 @@ export function layoutWide(): RootsLayout {
     return { x: mid.x, y: mid.y + up * Math.abs(a.x - b.x) * 0.1 };
   });
 
-  return { variant: 'wide', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, edges };
+  return { variant: 'wide', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, arcs, edges };
 }
 
 /**
  * Phones. Time runs down the page in bands: roots, founding documents, the
- * Constitution, then the Federalist and its critics. Labels sit under each
+ * Constitution, then the Federalist, the Anti-Federalists, and the letters. Labels sit under each
  * node so they stay readable at 375px wide.
  */
 export function layoutTall(): RootsLayout {
@@ -439,33 +548,41 @@ export function layoutTall(): RootsLayout {
       y: round(cursor + HEAD_H * 0.55),
     });
     cursor += HEAD_H;
-    // Rows alternate three and two across, so no node sits straight above another.
+    // A crowded cluster packs six short labels to a row. Otherwise rows
+    // alternate three and two across, so no node sits straight above another.
+    const compact = list.length > COMPACT_OVER;
+    const short = compact
+      ? shortLabels(list.map((n) => ({ id: n.id, label: typeset(n.label) })))
+      : null;
+    const rowH = compact ? 52 : ROW;
+    const r = compact ? 7 : R;
     let i = 0;
     let row = 0;
     while (i < list.length) {
-      const want = row % 2 === 0 ? 3 : 2;
+      const want = compact ? 6 : row % 2 === 0 ? 3 : 2;
       const chunk = list.slice(i, i + want);
       chunk.forEach((node, k) => {
         const slots = chunk.length === want ? want : Math.max(chunk.length, want);
-        const offset = (slots - chunk.length) / 2;
+        const offset = compact ? 0 : (slots - chunk.length) / 2;
         const x = (W * (k + offset + 0.5)) / slots;
-        const y = cursor + R + 8;
-        const lines = wrapLabel(typeset(node.label), 15);
+        const y = cursor + r + 8;
+        const lines = short ? [short.get(node.id) ?? node.label] : wrapLabel(typeset(node.label), 15);
+        const hitW = compact ? W / slots - 4 : 122;
         nodes.push({
           node,
           x: round(x),
           y: round(y),
-          r: R,
+          r,
           lines,
           anchor: 'middle',
           lx: round(x),
-          ly: round(y + R + 8 + FONT * 0.72),
-          hit: { x: round(x - 61), y: round(y - R - 7), w: 122, h: ROW - 8 },
+          ly: round(y + r + 8 + FONT * 0.72),
+          hit: { x: round(x - hitW / 2), y: round(y - r - 7), w: round(hitW), h: rowH - 8 },
         });
       });
       i += chunk.length;
       row += 1;
-      cursor += ROW;
+      cursor += rowH;
     }
     cursor += GROUP_GAP;
   };
@@ -476,7 +593,8 @@ export function layoutTall(): RootsLayout {
   const center = { x: cx, y: cursor + 40, rx: 104, ry: 40 };
   cursor += 80 + 40;
   band('federalist');
-  band('critics');
+  band('antifederalist');
+  band('letters');
   const H = cursor;
 
   const con = NODES.find((n) => n.cat === 'center')!;
@@ -522,5 +640,5 @@ export function layoutTall(): RootsLayout {
     return { x: mid.x + nx * bend * flip, y: mid.y + ny * bend * flip };
   });
 
-  return { variant: 'tall', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, edges };
+  return { variant: 'tall', w: W, h: round(H), fontSize: FONT, lineHeight: LINE, headSize: HEAD, center, nodes, heads, arcs: [], edges };
 }
